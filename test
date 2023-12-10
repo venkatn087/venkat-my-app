@@ -1,0 +1,13 @@
+ARG version=1.8
+FROM java:$version   /java:11 
+RUN apt-get -y update
+RUN groupadd -r java && useradd -r -g java ramesh   
+USER ramesh
+WORKDIR /tmp
+COPY testone.txt .
+ARG VARIABLE_1=5       //5
+ENV VARIABLE_2=$VARIABLE_1  //5
+RUN echo "print variable value:" $VARIABLE_1
+RUN echo " print ENV variable : " $VARIABLE_2
+ENTRYPOINT ["sleep"]
+CMD sleep ["500"]
