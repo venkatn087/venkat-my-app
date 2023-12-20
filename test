@@ -66,3 +66,76 @@ volumes:
   drupal-sites:
   drupal-themes:
 
+
+
+services:
+  web:
+    image: nginx:alpine
+    container_name: nginx_con
+    ports:
+      - "9090:80"
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    env_file: env.txt
+
+
+vi env.txt 
+MYSQL_ROOT_PASSWORD=12345678
+SHOW=file
+
+
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysqltest
+    ports:
+      - "3306:3306"
+    env_file: env.txt
+    volumes:
+      - "mysql_volume:/var/lib/mysql"
+volumes:
+  mysql_volume:
+
+services:
+  web:
+    image: centos
+    container_name: nginx
+    networks:
+      - test_net
+    tty: true
+  db:
+    image: centos
+    container_name: mysql
+    networks:
+      - test_net
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+    tty: true
+networks:
+  test_net:
+
+docker exec nginx bash -c "ping mysql"
+docker network create test_net
+
+docker exec mysql bash -c "ping nginx"
+
+
+
+version: '3'
+services:
+  web:
+    image: my_image
+    container_name: test_cont
+    build: .
+
+vi Dockerfile
+FROM nginx
+RUN mkdir /opt/test
+
+docker-compose build 
