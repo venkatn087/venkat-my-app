@@ -13,6 +13,9 @@ ENTRYPOINT ["sleep"]
 CMD sleep ["500"]
 
 
+https://howchoo.com/docker/how-to-add-a-health-check-to-your-docker-container/
+
+
 
 services:
   proxy:
