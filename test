@@ -1,3 +1,45 @@
+services:
+  drupal:
+    image: drupal:9
+    ports:
+      - "8080:80"
+    volumes:
+      - drupal-modules:/var/www/html/modules
+      - drupal-profiles:/var/www/html/profiles       
+      - drupal-sites:/var/www/html/sites      
+      - drupal-themes:/var/www/html/themes
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=mypasswd
+
+volumes:
+  drupal-modules:
+  drupal-profiles:
+  drupal-sites:
+  drupal-themes:
+
+try to access via localhost:8080
+
+select postgresql
+databasename : postgres
+password
+
+click on advanced option
+choose host: service name of psotgres which is postgres
+portnu: 5432
+
+save and continue
+
+docker compose down -v
+volumes also get deleted
+
+
+https://github.com/dockersamples/example-voting-app
+
+
+
+
 ARG version=1.8
 FROM java:$version   /java:11 
 RUN apt-get -y update
