@@ -1,0 +1,5768 @@
+Configuration Management tools:
+---------------------------------------------
+if we see scm (software configuration management )tool, github, gitlab, bitbucket, gerrit etc..
+
+CM , we have n no. of tools , here most popular tools are chef, puppet and ansible.
+
+what we will do in CM tool?
+-------------------------------------
+
+
+chef , puppet and ansible  --> 
+(master -- >slave nodes)
+pull based concept 
+push based concept
+chef --> pull based methodology will follow
+master --> node.1 1000 2000(5000) chef-client  will run for every 30 mins 
+                 node...n
+
+i will write a cookbooks  and will uplaod/store into master 
+
+ansible call it as playbooks
+ansible master (controller) --> nodes (1000, 5000, 12000)
+
+ here will write a playbook, i will execute from master(ansible controller)
+ (which nodes i need to target ,that nodes IPaddress/ hostnames will be specifed in a file called as  "inventory file"
+collect host names/ nodes
+
+vi inventoryfile
+
+[all]    ----> groupname
+10.2.3.4
+10.17.1.0
+10.
+10
+10
+10
+[java]
+10
+10.
+10.
+[database]
+10.2.3.4
+10.4.5.6
+
+all, groupname/ perticual ip address
+
+
+in tomorrow, all of you please get an aws account
+to install , aptget install ansible
+
+
+apt install ansible
+
+
+we used to call as ad-hoc commands
+
+like in jenkins we used to call everything is plugins ,in ansible everything is module only..
+
+i need to create a file
+file module
+
+1000+ modules are there 
+
+if we want to work on docker, ansible, kubernetes (yaml files) we must familiar with manual steps 
+if we know the manual steps, we can automate it otherwise it is not possbiel even for exeperienced people.
+
+java installation 
+how to install the java m check in google and try to install manual in your system.
+make a note of all the manual steps 
+then try to automate, we know most of the 
+
+module to create a file in ansible
+module to start teh servcie in ansible
+
+
+ansible playbook to install the java 
+
+
+ad-hoc commands:
+------------------------
+i want to see the output of some command (file1.txt is there or not) execute a command
+
+
+command
+shell
+file
+ping
+copy
+
+ansible atlanta -m ansible.builtin.copy -a "src= dest=/tmp/hosts "
+
+syntax: ansible localhost -m ansible.builtin.copy -a
+
+-m stands for module
+module name
+ansible.builtin.copy
+ansible.builtin.file
+ansible.buitlin.command
+-a argument
+
+
+
+- name: Copy file with owner and permissions
+  ansible.builtin.copy:
+    src: /srv/myfiles/foo.conf
+    dest: /etc/foo.conf
+    owner: foo
+    group: foo
+    mode: '0644'
+
+
+there is a difference shell module and command module in ansible
+
+in one of module we can't use  | (pipe )
+
+ls -ltr | grep hello  shell module 
+
+ls -ltr  in command module it will not allow the piple symbol
+
+
+While using the Command module, the commands will not be executed through a shell. Consequently, variables like $HOME are not available, and operations like <, >, | and & will not work in this case. If you want to use these variables and operations, you need to use a shell module.
+
+
+
+
+
+
+
+
+vi ansible-playbook.yaml
+---
+- hosts: 10.0.1.0
+  name: java installation
+  become: yes
+  tasks:
+     name: list the files
+     command: ls -ltr
+
+
+       
+
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    fruit: "apple"
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+        msg: "our fruit is {{ fruit }}"
+        verbosity: 2
+
+
+
+---
+- name: pause module demo
+  hosts: all
+  vars:
+    wait_seconds: 10
+  tasks:
+    - name: pause for {{ wait_seconds | int }} second(s)
+      ansible.builtin.pause:
+        seconds: "{{ wait_seconds | int }}"
+
+    - name: message
+      ansible.builtin.debug:
+        msg: "The end"
+
+How to pass extra variables to ansible playbook?
+example3: 
+---
+- name: extra variable demo
+  hosts: all
+  vars:
+    fruit: "banana"
+  task:
+    - name: print message
+      ansible.builtin.debug:
+        msg: "fruit is {{ fruit }}"
+ansible-playbook playbookname
+ansible-playbook --extra-vars="fruit=apple" playbookname
+--extra-vars '{"fruit":"apple"}'  //json format
+--extra-vars "@file.json"
+--extra-vars "@file.yml"
+
+
+
+---
+- name: my first playbook
+  hosts: localhost
+  tasks:
+    - name: install apache web server
+      yum:
+        name: httpd
+        state: present
+        update_cache: true
+
+
+ansible-playbook playbook1.yaml --syntax-check (syntax check)
+
+ansible-playbook playbook1.yaml --check 
+
+ansible-playbook playbook1.yaml -C  (for dry run)
+
+ansible-playbook playbook1.yaml -b   ( to run with sudo become remote use)
+
+ansible-playbook playbook1.yaml -b -K    it will ask the root password
+  or 
+ansible-playbook playbook1.yaml -b --ask-password 
+
+if the current ansible controller user is differnt in the remot execution server,
+ then we need to pass that user name as well.
+
+ansible-playbook playbook1.yaml -b -K --become-user=root
+
+
+ansible-playbook playbook1.yaml -b -K -u root -k
+
+
+setup module will help us to understand the differences among remot esystems such as OS/distro, Network, disks,and other system level information.
+
+
+ansible web1 -m setup -a 'filter=ansible_os_family'
+
+
+---
+- name: my first playbook
+  hosts: localhost
+  tasks:
+    - name: get facts
+      debug:
+        msg: "{{ansible_all_ipv4_addresses}}"  # accessing the variable
+
+
+---
+- name: my first playbook
+  hosts: localhost
+  tasks:
+    - name: get facts
+      debug:
+        msg: "{{ansible_all_ipv4_addresses.1}} {{ansible_hostname}}"  # ip address start with 1 and display the hostname
+
+
+---
+- name: my first playbook
+  hosts: localhost
+  tasks:
+    - name: get facts
+      debug:
+        msg: "{{ ansible_facts }}"  # gather all the facts 
+
+---
+- name: my first playbook
+  hosts: localhost
+  tasks:
+    - name: get facts
+      debug:
+        msg: "{{ ansible_facts.eth1.ipv4 }}"  # ip address start with 1 and display the hostname
+
+
+---
+- name: my first playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: get facts
+      debug:
+        msg: "{{ ansible_facts.eth1.ipv4 }}"  # ip address start with 1 and display the hostname
+will get an error , because we have disabled the 
+
+
+package module is general OS package manager.Package module installs, upgrades, and removes the pacakges using the underlying OS package manager
+
+
+ansible-doc service 
+ansible-doc modulename
+
+
+copy: copies a file from the local or remote machine to a location on the remote machine
+
+
+
+name: create an admin account
+user:
+  name: "{{item}}"
+  state: present
+  groups: "wheel"
+  loop:
+    - webadmin
+    - dbadmin
+
+- hosts: all
+  vars:
+    userlist:
+      - webadmin
+      - dbadmin
+  tasks:
+    - name: create admin accounts
+      user:
+        name: "{{item}}"
+        state: present
+        groups: "wheel"
+      loop: "{{userlist}}"
+
+
+Variables:
+---------------------------
+Not all systems managed by ansible are exactly alike
+Variables help us deal with differences between systems
+
+Variables can make tasks/playbooks behave differently when applied to different hosts.
+variables can be inserted into templates
+some variables control how ansible connects.
+
+
+-name: 
+ host: localhost
+ tasks:
+   - name: ensure ssh directory exists
+     file:
+       state: directory
+       path: /var/www/.ssh
+      -name: ensure key is on the remote server
+     copy:
+       src: files/deploy_key
+       dest: /var/www/html
+       mode: 0600
+   - name: clone a private repository 
+     git:
+       accept_hostkey: yes
+       clone: yes
+       dest: /var/www/html
+       key_file: /var/www/.ssh/rsa_key
+       repo: git@github.com:app1/myrepo.git
+
+
+
+
+
+
+How to break string into multiple lines.
+---------------------------------------
+
+| --> literal block scalar
+
+> -> folded block scalar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Docker volumes
+--------------
+
+Docker containers are ephemeral (temporary)
+where as the data processed by the container should be permanent.
+
+Generally, when a container is deleted all its data will be lost.
+To preserve the data, even after deleting the container, we use volumes.
+
+Volumes are two types
+1.Simple docker volumes
+2.Docker volume containers (shared volume)
+
+Simple docker volumes
+---------------------
+These volumes are used only when we want to access the data,
+even after the container is deleted.
+But thisdata cannot be shared with other containers.
+
+2.Docker volume containers (shared volume)
+--------------------------------------------
+These are also known as reusable volume.
+The volume used by one container can be shared with other containers.
+Even if all the containers are deleted, data will still be available on the docker host.
+
+
+
+Tools:
+Source code management -> Github, bitbucket , gitlab, gerrit, git  (Github and Gitlab)
+Build tool -> Gradel (Maven )
+CI -> Jenkins
+Code Quality -> Sonarqube, Spotbugs
+Containarization: Docker
+Confifguration management -> Ansible
+Orchi -> Kubernetes
+Monitoring tools --> prometheus and grafana , ELK, Datadog, ..
+Hashicorp tools --> Vault(25k), Nomad, Consul. Terraform.
+Apache and Tomcat..
+Actvie Directory
+Nexus 
+Linux admin/ shell scripting
+
+
+DevSecops:
+--------
+Secret dection tools : 100 tools 
+SCA:
+SAST --> 
+DAST
+IAST
+
+DevOps :
+
+Building Railway track in our country:
+ "continuous learning is required.." /
+
+7 yrs, ubunut/ linux :
+
+---------------------------------------------------------------------------------------------
+
+-------------------------------
+      Sonarqube: Nexus, maven , git , jenkins (CI)
+--------------------------------
+
+Git , linux 
+
+Sonarqube?
+-------------
+Develoepr wrote 1000 lines of code as part of enachncing the requirement , code need to review the Team lead ,
+2 hrs of time , he is bussy with other tasks
+
+10 developers --> manual process and time consumption.
+automation .. 
+Sonarqube, Facebook infer tool, spotbugs, semgrep .... 
+
+What are all teh different edition are avaialable in sonarque?
+-----------------------------------------------------
+Sonarqube tool developed by the Soanrqube company.
+
+Sonarqube have multiple editions ..
+Comunity edition  -> open source limited features
+Develoepr edition --> Paid version extra features 
+Enterprise edition  --> paid version 
+Data analysi edition --> paid version
+
+what version of soanrqube are you using?
+-----------------------------------------
+LTS  long term stability and monthly release
+in terms of sonarqube, LTS version will relase for every 18 months
+
+8.1   -> 3 months 
+8.2
+8.3
+8.3
+8.9 LTS
+8.10
+8.11
+8.12
+9.0 lTS
+
+8.2 --> 8.3 -> 9.3->10.x
+security concern
+
+every tool version should be upto date
+ 
+18 months instead of quarerly once
+
+one Devop roles /taks need to upgrade all the tools...
+
+8.9 LTS -> 9.0 LTS
+
+What database are you using in the soanrqube?
+----------------------------------------------------------
+we need some d/w's need to isntall (pre-requisite's)
+8.9 
+
+Java 11--> 
+Database
+
+Database may not required
+
+in the future if you need to upgradethe sonarqube , then Data base must be avaialbe.
+
+Postgresql
+MySQL
+Oracle
+
+How to integrate postgresql with sonarqube
+---------------------------------------------------------------
+
+How to choose the code quality tool for yoru project?
+-----------------------------------------------------------------------------------------
+
+what arel the programming languages are using in your project
+
+angular
+javascript
+java
+css
+html
+go
+python
+
+17 promming lanugaes
+
+
+25 langauges
+
+==============================================
+
+Built for developers by developers
+
+Start your free 14 day Developer Edition trial and get:
+
+Branch Analysis
+Pull Request decoration
+Taint analysis
+25+ languages, frameworks, and technologies
+SonarLint IDE integration
+
+
+Community editon
+
+Branch analysis will not support ( only 1 branch -master only analysis will be done)
+
+whenever ypou push the code 
+
+Dev 
+QA
+Feature
+Hot-fix
+relaease
+master ---> 100's issues / fial the job
+
+to full full the gap of branch analysis , opne source plugin to suppot the branch level analysis. 
+
+Develoepr edition 
+
+PR /pull request  --
+
+
+
+
+
+
+8.9.10  
+
+major version -> 8  yearly once 
+
+minor version  -> 9 pre quearterly 
+
+Patch release -10   weekly
+
+
+when we are upgrading the tool ,  pre-requiresit (java 11, postgresw 10 )
+8.9 to 9.0 (psotgresql 14) 
+
+We need to have the java:
+
+
+
+https://www.oracle.com/in/java/technologies/javase/jdk11-archive-downloads.html
+
+https://docs.sonarsource.com/sonarqube/9.9/requirements/prerequisites-and-overview/#:~:text=The%20SonarQube%20server%20requires%20Java,patch%20update%20(CPU)%20releases.
+
+https://www.sonarsource.com/products/sonarqube/downloads/
+
+https://www.sonarsource.com/products/sonarqube/downloads/historical-downloads/
+
+
+
+
+Sonarqube
+
+Elastic Search  -> root
+Web
+
+
+What is sonarqube?
+
+What are all the different editions are present? difference between them?
+
+What are all the pre-requisite to install the soanrqube?
+
+
+What is the default database in sonarqube? why do we need to install the other database?
+
+
+Can we install sonarqube with root user ? if not why?
+
+
+How to integrate postgresql with sonrqube?
+
+
+what are all the different programming languages supported by Sonarqube?
+
+
+Does the community edition will support branch level analysi? if not why to overcome this?
+
+
+How to Downlaod the sonqrqube 8.9 LTS(Long term stability)
+Go to 
+https://www.sonarsource.com/products/sonarqube/downloads/historical-downloads/
+
+scroll down till you see the "SonarQube 8.9.10 LTS previous LTS"
+
+
+Unzip it.
+Go to C:\Users\Admin\Downloads\sonarqube-8.9.10.61524\sonarqube-8.9.10.61524\bin\windows-x86-64 path and enter "dir" 
+as mentioend below.
+C:\Users\Admin\Downloads\sonarqube-8.9.10.61524\sonarqube-8.9.10.61524\bin\windows-x86-64>dir
+
+StartSonar.bat   then hit enter
+
+
+how to access the sonarqube?
+--------------------------------
+http://localhost:9000
+
+
+initial/default credentials are:
+user name: admin
+password: admin
+
+what is the defecult port number for sonarqube: 9000
+
+
+Developement
+testing 
+stage
+UAT
+Pre-prod
+Prod
+
+
+J:
+cd -- > change the directory
+ctrl + c --> to copy the line
+ctrl + v -->to paste the code
+
+dir --> to see the list of files present in the directory
+
+
+var a
+var b
+var c  -->  sonarqube wil lraise an issue saying that unused vairable exists, issue no -1 
+# if statement for comparing the 2 numbers
+if a < b
+ echo " a is less than b"
+else
+  # var a
+ echo "a is greater than b"
+\
+  if 100 < 90
+     if 90 < 80
+      if 80 < 70 
+      ,,,
+      ,,,
+         20 nested if statetemts , does is user-friednly to the develoeprs to understand the logic?
+       
+
+    if 10 < 5
+  endif
+
+
+1. unused code like variable declaration/statement etc.should not exist.   -> rule 1
+2. commented lines also removed if not required    rule2
+3. nexted if statemtns/for/switch/do-while to be reduced as much as possible.  rule3
+
+19 + programming lanugaes 
+
+java --650 rules are exists
+javascript -300 rules 
+html 250 
+css
+scala
+go 
+python
+etc..
+
+
+3 tyeps of issues
+Bugs  ->  Blocker, critical, major, minor, info
+code smells -> Blocker, critical, major, minor, info
+vulnearabilities -> Blocker, critical, major, minor, info
+
+what is bug?
+something wrong with code, will fail during the runtime exevution 
+incorrect JDBC connection , open the JDBC connect, close the JDBC connection 
+try block expcetion 
+any piece of code which will cause fail during the runtime exeuction comes under either blocker/critical
+what is code smell?
+the piece of code will not give an error which will unclear to the developer while reading the code
+var c
+#var c  info
+Major/minor
+what is vulnerabil;ity?
+there is a wakness in the code whihc help hacket to attack the code...
+
+info:
+Major and Minor seveority comes under code smells
+
+
+
+
+
+what is a Quality Gate?
+
+QG is a collection of conditions
+
+we will define the conditions and will assign to a project
+
+ Bugs = 0  
+ code smells = 0  1
+ vulnerability= 0
+
+QG has status --> passed/faied
+QG status --> failed
+QG status --> passed
+
+my code is good to move to next level
+
+Sonar way -> default built in QG
+
+
+what is a quality profile (QP)?
+
+a collection of rules
+Sonar way is the default built-in QP which can't be deleted.
+we can assign default to any of the QP.
+Project_One
+in your java project we may have html, css, javascript and java programming lanuges are used.
+Java -QP
+CSS --> QP
+HTML--> QP
+JAVASCRIPT -QP
+
+
+In the sonarqubeto identify from one project to another project, project_key is the primary key. - unique
+
+
+mvn sonar:sonar \
+  -Dsonar.projectKey=com.testone.project \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=43318f4630441dfb2548df8d6bfa96aef67e33a1
+
+
+MAVEN
+ 
+Project_one_QG --> Project_one
+
+with -->list of  projects  added to this QG
+
+without -> list of project doesn't added to this QG
+
+ALL --> 
+
+Only one QG is will be attached to project
+QG --> many projectes
+
+multiple  QG can't attach to a single project.
+
+
+
+
+What is a coverage?
+
+To know how much line of code is covered by the test cases.
+
+unit testcases -->  Developer need to write test cases to cover 100% of the lines which he wrote the code.
+
+1 test case wrote to cover the code
+ 10 < 5
+ 
+if A < B
+  echo "hello"   1  
+else
+ echo "hi"  2
+fi
+
+1
+---   50%
+2
+
+code coverage is 50%
+write more test cases 
+code coverage should be 80% then 
+
+integration/ UAT/Fucntion al testing
+
+
+
+
+issues
+---------------
+Bug
+code smell
+Duplication 
+Coverage
+
+
+QG-2
+Blocker  o   (Bug/code smell/vulnearability)
+critical
+major
+minor 
+info
+coverage
+duplciation
+
+go with type of bug or seveority of the bug
+
+
+
+currently not using any of the external database's. 
+Inbuilt-database H2 is not suitable for the upgrade.
+
+
+what is overall code and new code?
+-----------------------------------------------------
+Overall code-->
+in one of Java code -- was develoepr and still developing last 10 yrs ..
+if we introduce the sonarqube tool now, when we run the scan , overall code 2 lacs line of code(muliple developers last 10 )will be scanned
+, 1000 issues wil lcome... 
+
+New code -->
+am working on issue/bug , to fix this bug wrote 5 lines of code. soanrqube need to scan only these  5 lines of code.
+
+we can define the new code in 3 ways..
+
+1.previous version.
+-----------------------
+maven --> pom.xml --> <version>8.9</version>  
+                                       2 weeks /3 months /1 months    }   durtaion  --> whole team may write 1000 lines of code --> new code
+                                    <version>9.0</version  
+
+
+2.number of days :
+-------------------
+ 30 days 
+   new code
+
+3. specific analysis:
+----------------------
+some analysis/scan completed, this analysis as base... to some other analys ...   -> new code
+
+
+duration --> 
+
+need to give the permission to different people deve/testers/managers...
+JIRA/service now /service desk.. ticketing tools  (Devops)
+
+
+Ramesh need an access to sonarqube 
+Active directory with soanruube .. > all the employee's names will populate  no need to create user's
+
+muluitple tools ---> if we create different user names /passwords for different tool, ramesh unable to remember the crdentails.
+
+
+
+Integration of postgresql with sonarqube--> 
+integration of sonarque with jenkins (sonar properties)-->
+sonarlint --> integration of sonarlint with IDE's like eclipse/vscode/intellij 
+installtion/integration of postgresql/java instalation --linux environment
+upgrade of sonarqube -->
+
+------------------------------Maven-------------------------------------
+What is a Maven tool ?
+
+maven is a build/compilation tool execute the java code.
+
+
+why we need to use the maven tool?
+
+maven came with a perticular structure, we need to palce the code in that structure only , then only maven tool will understand the code, and the goals/command will pick the percticualr code/testcase and it will be executed.
+
+
+
+
+javac hello.java -->  hello.class
+
+java hello -> run the java code
+
+
+what is the structure of maven tool?
+
+hello
+ pom.xml
+ target -- //output
+ src
+    main
+       java
+            hello.java ---->   source code
+            hello1.java
+            hello3.java
+       resources
+         sonar.properties
+         application.properties
+      webapp
+          
+
+    test
+       java    test cases 
+       resources
+
+   site
+
+maven project
+
+
+git bash 
+
+
+maven installation in windows:
+---------------------------------------------
+It is a binary file..
+
+download a binary file,
+unzip it
+set the maven path and maven home
+
+maven current version : 3.9.5
+
+
+Maven installation:
+-------------------------------
+https://maven.apache.org/download.cgi
+
+https://maven.apache.org/archetypes/maven-archetype-quickstart/
+
+
+mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4
+
+
+pom.xml ---? 2 classes
+
+pom.xml 
+
+https://maven.apache.org/guides/introduction/introduction-to-the-pom.html
+
+pom.xml reference:
+-------------------------
+https://maven.apache.org/pom.html
+
+
+----------------------------------------sonarqube---------------------
+maven
+java
+git
+
+maven -- 1 way via command line how to check the quality of the code ?
+jenkins --2 way ci --> how to run sonarqube 100 jobs 
+IDE (vs/intellij/eclipse) -3rd way
+
+
+maven life cycles:
+------------------------------
+3 life cycles are present in maven
+
+1.default
+2.clean
+3.site
+
+default ---> life cycle is again divided into 7 phases
+
+validate -->
+compile
+test
+package
+verify
+install
+deploy
+
+
+mvn validate --->
+mvn compile --> validate+ compile
+mvn verfiy --> validate + compile + test + package+ verify
+
+validate - validate the project is correct and all necessary information is available
+compile - compile the source code of the project  
+test - test the compiled source code using a suitable unit testing framework. These tests should not require the code be packaged or deployed
+package - take the compiled code and package it in its distributable format, such as a JAR.
+verify - run any checks on results of integration tests to ensure quality criteria are met
+install - install the package into the local repository, for use as a dependency in other projects locally
+deploy - done in the build environment, copies the final package to the remote repository for sharing with other developers and projects.
+
+
+
+hello.java --> hello.class 
+
+output is present in the target folder
+App.java --> App.class
+
+mvn test --> validate + compile + test
+
+clean --> remove the output file/directory --> target 
+
+
+
+App.java --> App.class --> 
+App2.java  --> App2.class
+App3.java
+..
+..
+.
+
+n.of files -->  .jar/war/ear
+
+mvn package  --> validate + compile + test + pacakge
+unit test cases --> integration testing  -> UAT  --> perfroamnce -->
+mvn verify 
+
+difference between install and deploy ?
+----------------------------------------------
+mvn install -->  jar file --> local repo
+mvn deploy --> jar file -->remote repo --> nexus artifactory tool 
+
+in mvn 3 types of repositories are exists
+--------------------------------------------------------
+local repo --> what is the default  maven local repo path   $HOME/.m2 --->
+remote repo --> artifactory tool --nexus/jforg/artifactory /
+central repo  -> https://repo1.maven.org/maven2/
+
+
+local repo --> remote repo --> central repo 
+.m2 --> nexus -> https://repo1.maven.org/maven2/
+           
+nexus -->
+
+100 
+
+
+https://github.com/venkatn087/simple-java-maven-app  --> need to fork this project into your account.
+
+ 
+
+how to Fork a project from one github account to another git hub account>?
+
+
+https://github.com/imakashsahu/Third-Eye-Final-Year-Project  ---> from here i need to copy into my gith hub account
+
+first i need to login into my github account
+
+
+mvn sonar:sonar -Dsonar.projectKey=mysimple-test-project -Dsonar.host.url=http://localhost:9000 -Dsonar.login=5e2ab68aa43755f45b4ae79458ff05a604ef18dc
+
+
+
+maven directory structure
+types of repo 
+local
+remote
+central
+different life cyles 
+different phases 
+how to create a maven project
+maven installation in windows
+
+how to fork a project from one git hub account to your github account
+
+pom.xml    -> for your project whatever the dependencies are required/configuration detials specified in the pom.xml
+
+mvn clean compile
+pom.xml is not present in the current directory error will occur.
+
+
+pom.xml is an xml , contains the multiple tags.
+different tags avaialbe in the pom.xml
+
+pom.xml
+
+<project>   --> open tag
+<modelversion>4.0</modelVersion>
+<groupId>com.test</groupId>
+<artifactId>test</artifactId>
+<version>1.0</version>
+</project> closed tag
+
+<packaging>war</pacakging>
+
+<plugin>
+    <groupId>com.test</groupId>
+   <artifactId>test</artifactId>
+   <version>1.0</version>
+<plugin>
+
+
+<plugin>
+    <groupId>com.xyz</groupId>
+   <artifactId>LoanRepayment</artifactId>
+   <version>2.0</version>
+<plugin>
+
+<plugin>
+    <groupId>com.xyz</groupId>
+   <artifactId>LoanRepayment</artifactId>
+   <version>2.0</version>
+<plugin>
+
+GAV --> GAV parameter/ coordinates
+
+<dependencies>
+<!-- https://mvnrepository.com/artifact/junit/junit -->
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+parent pom.xml
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+</dependency>
+
+</dependencies>
+
+<dependencyManagement>
+
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+</Dependencymanagement>
+
+
+
+
+
+<modules>
+    <module>child1</module>  pom.xml    
+    <module>child2/aggregator.xml</module> pom.xml
+    <module>child1</module> pom.xml
+    <module>child2/aggregator.xml</module> pom.xml
+</modules>
+
+module1:
+
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+modul2:
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+module3:
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
+
+dependencymanagement
+
+what is the difference b/w dependencies and dependencymanagement?
+
+<build>
+
+</build>
+
+
+
+
+
+
+
+
+
+
+
+https://github.com/venkatn087/simple-java-maven-app  --> public 
+
+fork the project -> to copy the project from one git hub account to another github account
+
+
+target fodler is the output of maven project
+
+
+<build>
+
+
+spotbugs plugin is not executed during the compilation phase.
+
+<plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>3.1.11</version>
+        <executions>
+          <execution>
+            <id>spotbugs</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>spotbugs</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <htmlOutput>
+             true
+         </htmlOutput>
+          <threshold>Low</threshold>   
+          <effort>Max</effort>
+          <debug>true</debug>
+        </configuration>
+</plugin>
+
+
+externally specify 
+
+validate
+compile   // mvn clean compile 
+test
+package
+verify  /// phase 
+install 
+deploy
+
+
+
+
+</build>
+
+profile: tag
+-------------
+dev 
+---
+----
+qa
+---
+---
+uat
+
+prod
+
+validate
+ compile
+test
+pacakge
+
+ mvn compile -Pdev
+ mvn install -Powaspdependencycheck
+-P --profile
+owasp-dependency-check
+
+<profiles>
+  <profile>
+     <id>owaspdependencycheck</id>
+        <build>
+         <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>7.1.1</version>
+            <!-- to suppress the vulnerabilities and fail the build based on CVSS -->
+            <configuration>
+              <!--<suppressionFiles>
+                  <suppressionFile>suppressions.xml</suppressionFile>
+          </suppressionFiles> -->
+              <!--  <failBuildOnCVSS>5</failBuildOnCVSS> -->
+              <formats>ALL</formats>
+            </configuration>       
+           </build>
+  </profile>
+</profiles>
+
+
+
+
+googleformatter maven plugin
+--------------------
+echo "hello"
+	test hello
+			var c
+-----after googleformater ---
+echo "hello"
+test hello
+var c
+---------------------------------
+cd src/main/com/test/app.java
+vi app.java
+       
+:wq!
+
+
+settings.xml
+
+default ,clean ,site
+default 
+  validate
+  compile
+  test
+  install
+  deploy  
+
+
+what pom?
+project object module 
+
+
+settings.xml
+
+for any tool, as devops engineer we need to understand configuration file exists?
+
+maven:
+-------------
+bin --> mvn start /stop 
+conf --> 
+settings.xml
+
+notepad++
+
+localrepository:
+interactive mode
+offline
+plugingroup
+proxies
+servers
+mirrors
+profiles
+activateprofile
+
+settings.xml can be defiend in two places -->
+1.global level settings.xml file
+2.user settings.xml file  
+${HOME}/.m2/settings.xml ---->
+
+${HOME}/.m2 --> local repository path
+
+J:/projectone/localrepo --> my custom local repository
+
+mvn clean compile 
+
+<!--
+
+-->
+<proxies>
+     <http>l10.20/prioxies</http>
+</proxies>
+
+
+<servers>
+  <server>
+   <id>repo</id>
+   <username>user1</username>
+   <password>password</password>
+   </server>
+
+<servers>
+
+
+maven will connect with nexus (artifactory tool)
+http://nexus.com/repo
+
+
+<profile>
+        
+<profile>
+
+<repositories>
+    <repository>
+   http://nexus.com/repo1
+collection of repo , to which repository we need to connect that info need to sepeicfy
+    <repository>
+  <repository>
+   http://nexus.com/repo1
+collection of repo , to which repository we need to connect that info need to sepeicfy
+    <repository>
+    
+</repositories>
+
+<distributionmanagement>
+to upload the articat into nexus those nexus repo urls need to specify here.
+    <repositories>
+     <repository>
+     http://nexus.com/repoxyz
+    </repository>
+    <repositories>
+
+</distributionmanagement>
+
+
+mvn deploy 
+compile ,test, package, interation, .m2 then need to upload into nexus 
+
+mvn install
+.jar 
+
+
+nexus --> repo -dev
+              rep2-prod
+
+mvn clean compile 
+.m2
+remote
+central 
+
+
+password encryption:
+-----------------------------
+
+
+masterpassword : xyz
+${user.home}/.m2/settings-security.xml
+
+cd ${user.home}/.m2
+vi settings-security.xml
+<settingsSecurity>
+  <master>{1bFzmWhc0+MHxASP8RJLnBY+YuVOjxzoQvoZ6/jb5Qg=}</master>
+</settingsSecurity>
+
+
+
+
+xyz
+
+
+https://maven.apache.org/guides/mini/guide-encryption.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+vi editor in linux
+linux basic commands
+
+
+mvn com.theoryinpractise:googleformatter-maven-plugin:format
+
+mvn test
+
+mvn org.jacoco:jacoco-maven-plugin:check  // coverage will be calcualted aginst unittestcases
+mvn org.jacoco:jacoco-maven-plugin:report
+
+
+surefire --to execute the unit test cases
+firesafe --> to execute the integration test cases 
+
+
+
+
+
+   
+
+
+code coverage:
+jacoco codecoverge
+
+if a < b
+ echo "
+
+
+1/2*100 =50%
+
+
+
+
+
+<plugin>
+  <groupId>com.github.spotbugs</groupId>
+  <artifactId>spotbugs-maven-plugin</artifactId>
+  <version>4.8.0.0</version>
+  
+</plugin>
+
+
+
+
+
+
+
+profile :
+
+
+settings.xml
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------
+Today we will cover on how to install postgresql in windows and how to integrate the same postgresql with the sonarqube.
+--------------------------------------
+we need to start the sonarqube
+we need to install the postgresql/mysql/oracle
+i have already installed postgresql in my system , first i will uninstall it.
+
+sonarqube main configuration file is sonar.properties.
+conf folder
+
+in the psotgresql , default database will be postgres
+if we don'';t want to use the default database, we need to create a new database.
+
+venkat123
+
+\l
+\du
+
+postgres 
+
+1.CREATE DATABASE sonarthreedb; 
+CREATE DATABASE sonartwodb ---> this is wrong as semicolon is not exists.
+2.CREATE USER sonarus1 WITH PASSWORD 'mypass';
+3.GRANT ALL PRIVILEGES ON DATABASE sonarthreedb TO sonarus1;
+4. ALTER DATABASE sonarthreedb OWNER TO sonarus1;
+
+5.ALTER USER dnmyusesr WITH PASSWORD 'new_password';
+
+
+create user sonartwo password 'mypassword';
+grant all privileges on database sonarqubedata1 to postgres ;
+
+\l --> to list of databases
+\du --> list of users
+
+\c sonarqubedata1
+\dt =--> to list the tables
+
+\d table_name 
+
+\q
+
+https://www.geeksforgeeks.org/postgresql-psql-commands/
+
+
+psql -U sonauserone -d sonarqubedata1
+
+
+
+=========================Git================================
+
+pre-requisites to learn the git is linux basic commands
+
+
+
+8 gb, hd 1TB
+
+
+16GB, 4 GB 30 gB space to ubuntu OS (different machine)
+
+virtualization , we need a third party tool , virtualbox, 
+
+Linux environme ---> ubuntu, centos, RHEL7, debian ---- famous os systems
+
+download Ubuntu OS image -->
+
+
+https://www.tutorialspoint.com/linux_terminal_online.php
+
+
+syntx: mkdir directoryname --> to create a directory ,directory is nothing but a collection of files
+ex: mkdir testone
+syntx:cd directory   -->change directory  
+ cd testone
+pwd --> present working direcotry -> to know currently where we are present
+ls -ltr  --> long listing 
+
+how to create a file in linux
+
+3 methods are there to create a file in linux.
+
+touch f1.txt  --> touch command is used to create an empty file.
+
+.f1.txt --> hiddent file --> hidden fiel start with "."
+ls -latr -->to see the hidden fiels 
+
+cat > file1.txt  
+hi hello world
+ctrl+c
+
+redirection as well.
+>   if the data exists in file, it will delete and add new data  
+
+>> if the data exists in the file, it will not delete, it will append the data to the end of the file.
+
+cat  --> to see what is present in the file 
+cat filename
+
+
+third method is vi editor
+------------------------------
+3 modes exists in vi editor
+command mode
+instermode
+esc mode
+
+The Vi editor has two modes: Command and Insert. When you first open a file with Vi, you are in Command mode. Command mode means you can use keyboard keys to navigate, delete, copy, paste, and do a number of other tasks—except entering text. To enter Insert mode, press i .
+
+how to go to esc mode?
+we need to hit the "esc" button , you will move from insert mode into esc mode.  then only we can able to save and quit/exit the file.
+:q!
+:w!
+:wq!
+
+shift+1 --> !
+
+to switch to the insertmode:
+i
+I  --> begining of the line
+a  move 1 position before the cursor
+A  move 1 position after the cursor    
+
+DD
+DD2
+
+
+how to delete a direcotry
+
+rmdir directoryname --> if the dieecotry is empty thenonly direcotry will be deleted
+
+
+rm -rf directoryname
+
+
+-r recurcively
+f fore
+
+
+
+
+
+drwxr-xr-x 1 Admin 197121 0 Oct 29 19:53 test/
+drwxr-xr-x
+
+first char -d -directory
+- -> normal file
+
+
+rwx      r-x      r-x
+
+
+owner/user   u
+group  //g
+others   o
+
+r -read
+w -write
+x -execute
+
+chmod g+w f
+
+
+to chage the permission of a file, use the chmod command
++ --adding the permission
+- --> removing the exisitng permission
+
+chmod u+xrw, g+w, o+x f1
+
+chmod u-x f1
+chmod g-w f1
+
+
+
+r --> 4
+w --> 2
+x --> 1
+----------
+      7
+
+chmod 766 f1   -> octal mode
+chmod u=rwx, g=rw, o=rw f1  --> symbolic mehtod
+
+
+7 --> u
+6 -> g
+6 -o
+
+
+----------------------------------------------------
+
+-----------------------------------------------------
+
+how to change the owner of the file in linux:
+
+ls -ltr
+
+chown hello:hello file1.txt
+
+chown :hello  file1.txt
+
+chown hello: file1.txt
+
+
+
+-----------------------------------------------
+how to create a user in linux
+
+useradd testone
+
+/etc/passwd  --file
+
+cat /etc/passwd
+
+
+
+passwd testone
+new passwd:
+confirm passwd:
+
+/etc/shadow  -files
+
+cat /etc/shadow
+
+how to create a group?
+/etc/group
+
+
+/etc/passwd
+/etc/shadow
+/etc/group
+
+root 
+su - testone  //switch user  -  username
+syn: su - username
+
+
+whenever we create a user, default group with the same username will be created.
+
+/ --> root directory
+
+
+The below table gives a very short standard, defined, and well-known top-level Linux directory list and their purposes:
+
+/ (root filesystem): It is the top-level filesystem directory. It must include every file needed to boot the Linux system before another filesystem is mounted. Every other filesystem is mounted on a well-defined and standard mount point because of the root filesystem directories after the system is started.
+/boot: It includes the static kernel and bootloader configuration and executable files needed to start a Linux computer.
+/bin: This directory includes user executable files.
+/dev: It includes the device file for all hardware devices connected to the system. These aren't device drivers; instead, they are files that indicate all devices on the system and provide access to these devices.
+/etc: It includes the local system configuration files for the host system.
+/lib: It includes shared library files that are needed to start the system.
+/home: The home directory storage is available for user files. All users have a subdirectory inside /home.
+/mnt: It is a temporary mount point for basic filesystems that can be used at the time when the administrator is working or repairing a filesystem.
+/media: A place for mounting external removable media devices like USB thumb drives that might be linked to the host.
+/opt: It contains optional files like vendor supplied application programs that must be placed here.
+/root: It's the home directory for a root user. Keep in mind that it's not the '/' (root) file system.
+/tmp: It is a temporary directory used by the OS and several programs for storing temporary files. Also, users may temporarily store files here. Remember that files may be removed without prior notice at any time in this directory.
+/sbin: These are system binary files. They are executables utilized for system administration.
+/usr: They are read-only and shareable files, including executable libraries and binaries, man files, and several documentation types.
+/var: Here, variable data files are saved. It can contain things such as MySQL, log files, other database files, email inboxes, web server data files, and much more.
+
+
+
+https://www.javatpoint.com/linux-file-system
+https://www.geeksforgeeks.org/tar-command-linux-examples/?ref=lbp
+
+
+https://www.geeksforgeeks.org/ls-command-in-linux/?ref=lbp
+
+
+https://www.javatpoint.com/linux-commands
+
+
+
+https://www.hostinger.in/tutorials/linux-commands
+
+
+useradd testone
+
+/home/testone --> 
+/home/testtwo
+/home/testthree
+
+/opt: /maven/soanrqube/git
+/var  log files 
+
+
+
+
+etc --- >
+var
+lib
+home
+
+how to zip the file
+
+zip filename.zip  .
+
+. --> denote current directory 
+C:\Users\Admin -> 
+
+cd C:\Users\Admin
+zip filename.zip  .
+unzip filename.zip .
+
+what is the tar file 
+tar -cvf xyz.tar .
+tar -cvf sdf.tar *.java
+
+verbose --> detailed information will be perovided , kind of log
+c- create a tar file
+f- file
+
+tar -xvf xyz.tar .
+
+
+
+
+grep command in linux:
+
+ls -ltr
+difference between find and grep
+The main difference between the two is that grep is used to search for a particular string in a file whereas find is used to locate files in a directory
+
+ps  --> 
+process id:
+
+
+awk, sed -->
+
+
+ls – lists a directory’s content.
+pwd – shows the current working directory’s path.
+cd – changes the working directory.
+mkdir – creates a new directory.
+rmdir – removes a folder or path.
+rm – deletes a file.
+cp – copies files and directories, including their content.
+mv – moves or renames files and directories.
+touch – creates a new empty file.
+file – checks a file’s type.
+zip and unzip – creates and extracts a ZIP archive.
+tar – archives files without compression in a TAR format.
+nano, vi, and jed – edits a file with a text editor.
+cat – lists, combines, and writes a file’s content as a standard output.
+grep – searches a string within a file.
+sed – finds, replaces, or deletes patterns in a file.
+head – displays a file’s first ten lines.
+tail – prints a file’s last ten lines.
+awk – finds and manipulates patterns in a file.
+sort – reorders a file’s content.
+cut – sections and prints lines from a file.
+diff – compares two files’ content and their differences.
+tee – prints command outputs in Terminal and a file.
+locate – finds files in a system’s database.
+find – outputs a file or folder’s location.
+sudo – runs a command as a superuser.
+su – runs programs in the current shell as another user.
+chmod – modifies a file’s read, write, and execute permissions.
+chown – changes a file, directory, or symbolic link’s ownership.
+useradd and userdel – creates and removes a user account.
+df – displays the system’s overall disk space usage.
+du – checks a file or directory’s storage consumption.
+top – displays running processes and the system’s resource usage.
+htop – works like top but with an interactive user interface.
+ps – creates a snapshot of all running processes.
+uname – prints information about your machine’s kernel, name, and hardware.
+hostname – shows your system’s hostname.
+time – calculates commands’ execution time.
+systemctl – manages system services.
+watch – runs another command continuously.
+jobs – displays a shell’s running processes with their statuses.
+kill – terminates a running process.
+shutdown – turns off or restarts the system.
+ping – checks the system’s network connectivity.
+wget – downloads files from a URL.
+curl – transmits data between servers using URLs.
+scp – securely copies files or directories to another system.
+rsync – synchronizes content between directories or machines.
+Ifconfig – displays the system’s network interfaces and their configurations.
+netstat – shows the system’s network information, like routing and sockets.
+traceroute – tracks a packet’s hops to its destination.
+nslookup – queries a domain’s IP address and vice versa.
+dig – displays DNS information, including record types.
+history – lists previously run commands.
+man – shows a command’s manual.
+echo – prints a message as a standard output.
+ln – links files or directories.
+alias and unalias – sets and removes an alias for a file or command.
+cal – displays a calendar in Terminal.
+apt-get – manages Debian-based distros package libraries.
+
+-----------------------------------------------------------------------------
+                    Virualization :
+------------------------------------------------------------------------------
+
+difference between virtualization and containarization?
+
+
+what is virtualization?
+
+I need linux machine?
+
+1- need to purchage new laptop cost of 60,000
+2-i can split/make use of my current windows system into ubuntu os, sharing the resources(CPU & Memory)
+
+16 ->RAM -> memory  at least 4gb is required for my windows os, 12 GB, let us assume that each system need 4 gb
+12 -> 4gb ,4g, 4gb ,max 3 different systems i can get it/
+
+
+Virtualization is a process that allows for more efficient utilization of physical computer 
+
+to do the virtualization 
+we need some pre-requisite tools
+1. virtualization tool - virtual box
+2. which os we need, that OS system .ISO image(software).
+
+
+
+
+main pom.xmlm (parent pom.xml)
+
+<project>
+
+<groupid>  </groupID>
+<artifactid> </artifactID>
+<version>1.0 </version>
+
+
+</project>
+
+
+
+child pom.xml 
+------------------------
+<project>
+
+<parent>
+     <groupid>  </groupID>
+     <artifactid> </artifactID>
+    <version> </version>
+</parent>
+
+
+<groupid>  </groupID>
+<artifactid> </artifactID>
+
+
+<name>   </name>
+
+
+
+
+</project>
+
+
+mvn help:effective-pom  -->
+
+
+what is parent tag in pom.xml?
+One reason to use a parent is that you have a central place to store information about versions of artifacts, compiler-settings etc. that should be used in all modules.
+
+main pom.xmlm (parent pom.xml)
+
+<project>
+
+<groupid>  </groupID>
+<artifactid> </artifactID>
+<version>1.0 </version>
+
+
+</project>
+
+
+
+child pom.xml 
+------------------------
+<project>
+
+<parent>
+     <groupid>  </groupID>
+     <artifactid> </artifactID>
+    <version> </version>
+</parent>
+
+
+<groupid>  </groupID>
+<artifactid> </artifactID>
+
+
+<name>   </name>
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
+   Git
+-----------------------------------
+what is git?
+
+why do we need git?
+
+
+am workinng on a project and modified the 2 lines of code.
+
+we store the code, which accessed by the multipel people
+
+svn, old tool , centralized tool , 
+
+git /github distributed tool 
+
+brances 
+store the code.
+mulitple tool -> github/bitbucket/gerrit/Gitlab
+source code management tools , different companies developed different tools
+
+what is a git and github?
+
+git is local repository that means which is present in my laptop/system alone, which is not accessible by others
+
+github --> is a remote repository where multiple people can access.
+
+what is a repository:/ folder/direcotry/repository
+
+what are the different commands are available at local repo side(Git/Git-client) /remote repository -> git-server
+-------------------------------------------------------------------------------
+
+
+ README file --> description of the project
+https://github.com/venkatn087/firstsimpletestproject
+
+
+as a developer i need to write a code for my applciation it may be java/python?
+
+mkdir  testhel
+cd testhel
+git init --> convert the normal directory into the git direcotry /initialize the git repository
+touch f1 f2 f3 f4
+git status
+ls -ltr
+git add .
+
+
+What are all the different directories in Git?
+------------------------------------------------------------
+there are 3 directorie are exists in git
+1. working directory
+2. staging area/index area
+3. local repository
+git status
+
+4. remote repository
+
+. working directory -->  staging area->local repository -> remote repoty ->
+
+
+git add is used to move the changes from working to staging area.
+
+git commit -m "created new files"
+
+
+git commit -> it will create a log with few details 
+who has modifed the changes
+when it has modifed 
+email id of the person who has modifed
+
+git log  to see the commit hositry 
+
+git config --global --list
+git config --global --edit
+git config --global user.name "hari"
+git config --global user.email "xyz@gmail.com"
+git commit -m "created new files"
+
+git push
+
+local repo to remote repo need to establish the path-->
+how do i know wheter the path is established or not bewtten git(local) and github(remote)
+git remote -v
+git remote add origin https://github.com/venkatn087/firstsimpletestproject.git
+$ git branch
+* master
+ git push --set-upstream origin master
+
+
+--------------------------------------------------------------------------------------------
+if it is an exist project, what are all the commands need to follow ?
+------------------------------------------------------------------------------------------
+
+git clone url 
+mkdir testesiting
+cd testesiting
+git clone is used to pull the changes from remote repo into local repo 
+cd reponame
+vi f3
+sdffgfggdfg
+
+give "esc" then 
+:wq!
+
+git add .
+git commit -m "modifed the file"
+git remote -v
+git push
+
+ 
+Below commands are not required for the existing project:
+git init -> no need to execute this command 
+working to staging area --. git add.
+
+git config --global user.name  "username"
+  "               "        user.email  " "
+git remote add origin url
+
+
+------------------------------Branches in git-------------------------------------
+git branch branchname  --> to create a branch
+ex: git branch dev
+git checkout branchname -->i need to take/copy  existing code presnet in master bracnh to my new branch, 
+ex: git checkout dev
+ or 
+git checkout -b newbeanchname
+ex: git checkout -b dev
+
+touch f5
+git add .
+git commit -m "new file created"
+git push
+ git push --set-upstream origin newbranchname
+ex:git push --set-upstream origin dev
+
+
+what is PR request? what is Merge Request?
+--------------------------------------------------------------------
+if we want to merge the code from one branch to another branch we need to raise a PR request.
+
+Purpose of PR request:if we want to merge the code from one branch to another branch we need to raise a PR request.
+
+-----------------------------------------------------------------------------------
+2nd method:  locally merge the code from one branch to another branch.
+
+
+master  --> dev
+
+git checkout master
+
+
+if we want to pull the latest changes from remote repo to local repo , we have a command called "git pull"
+
+git pull branchname
+
+
+what is the difference between git pull & git clone?
+---------------------------------------------------------------------------
+git clone is used to copy the remote changes to lcoal repo for the first time.
+git pull --> if we want to bring/copy any latest changes present in remote repo to local repo
+
+---------------------------------------------
+
+how to merge the code from one branch to anotehr branch in locally?
+------------------------
+
+git checkout -b qa
+
+QA ----> master 
+
+we have to present in the master branch
+
+git branch -d branchname  --> to delete the branch
+git branch -D branchname--> 
+
+git branch
+git branch branchname
+git checkout branchname
+or 
+git checkout -b branchname
+-------------------------------------------------------------------------------
+git reset and git revert
+-----------------------------------------------------------
+both the commands are used to undo the changes
+
+git reset ---> again will have 3 options 
+git reset --mixed HEAD~2
+git reset --soft HEAD~3
+git reset --hard HEAD~N  --> n can , no of commits need to undo
+ 
+       ------  mixed ---------l+s----------------------
+                                           soft
+ working   --->   staging --------l--------> local 
+   --------l------------HARD--------------delete    
+
+mkdir   exreset
+cd exreset
+git init
+touch f1
+git add .
+git commit -m "f1 created"
+touch f2
+git add .
+git commit -m "f2created"
+touch f3
+git add .
+git commit -m "f3 created"
+touch f4
+git add .
+git commit -m "f4 created"
+touch f5
+git add .
+git commit -m "f5 created"
+Admin@DESKTOP-4EI7QSI MINGW64 ~/extest (master)
+$ git log --oneline
+93b3ecc (HEAD -> master) f5 created
+d0e2f34 f4 created
+43ec694 f3 created  
+bb6be5e f2 created    -> f2 
+1d71510 f1 created          --> f1 
+
+
+git reset --soft HEAD~2
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/extest (master)
+$ git log --oneline
+43ec694 (HEAD -> master) f3 created
+bb6be5e f2 created
+1d71510 f1 created
+
+git reset HEAD~2 --> --mixed    --> undo the changes present in staging area + local area ---> workding directory
+  or 
+git reset --mixed HEAD~1     
+
+
+f4 and  f5 ---> staging area
+f3 --local area
+commit also deleted
+
+
+
+$ git log --oneline
+95e215e (HEAD -> master) all files comiited
+bb6be5e f2 created
+1d71510 f1 created
+
+
+git reset --hard HEAD~2
+
+
+--mixed or --soft --> moved the files from one directory another directory .
+ vi f1
+sdfsdfsdfg
+sdfsdgsd
+sdgdfg
+:wq!
+
+
+
+------------------------git revert--------------------------------
+git revert commitid
+
+
+what is the difference between git reset and git revert?
+--------------------------------------------------------------------
+1. incase of git revert perticualar commit id changes alone deleted
+   whereas in case of git reset previous ccommits to reach the specified commit id changes will be moved to the directoy
+
+2. unnecessary commit id's will be created in case of git revert . 
+    no noise of commits id's
+
+3 . we can track for what purpsoe commit's has been reverted  in case of git revert commad.
+    we can't track the reseted changes 
+
+------------------------------------------------------------------------------------------------
+
+
+git cherry-pick commitid
+
+to merge the perticualr commitid changes from one branch to antoehr branch , 
+
+git merge branch
+
+QA branch --> 10 commit id's 
+
+git merge master 
+
+----------------------------------------------------
+
+              git stash 
+---------------------------------------------
+
+what is the pusposr of git statsh?
+
+
+am working on one of the Development task , approx. will take 10 days ...
+
+on the 4th , my TL asked me to work on important task, i don';t want to loose the my current changes which are presemt in my working directory, temorarly i would liek to save in some other area  which is called as stash area and after completion of my high priority task, i will bring it back to my working directory and will continue from there ...
+
+git stash 
+working /staging --> stash area  git stash 
+stash area - > work    -->
+git stash apply   --> copy the changes from stash area to working  , at  the same time , changes will nto be deleted from stash area
+git stash apply stash@{1}
+git stash list
+git stash show -p
+git stash pop  --> copy the changes from stash area to working  , at  the same time ,cahnges will be deleted from stash area
+git stash pop stash@{1}
+git stash drop stashid
+
+git reset, git revert
+git cherry-pick
+git stash
+git pull
+git merge 
+branch 
+
+merge vs rebase
+git fetch
+
+
+--------------------------------------------------------------------
+what is the difference between git pull and git fetch?
+----------------------------------------------------------------------------
+The key difference between git fetch and pull is that git pull copies changes from a remote repository directly into your working directory, while git fetch does not. The git fetch command only copies changes into your local Git repo. The git pull command does both.
+
+git fetch url
+git pull url
+------------------------------------------------------------------------------
+                     Merge conflicts :
+----------------------------------------------------------------------------
+we have seen how to creates branches, stash, reset with options and revert:
+--------------------------------------------------------------------------------------------
+
+git merge qa
+
+
+
+what is the merge in git?
+
+1. to merge the code from one branch to another branch --> merge conflicts 
+2. git pull -> to copy the remote changes into local repo --> conflicts
+git push --> issues will occurs while pushing the code. 
+
+
+git branch -a --> all local + remote branch names will be displayed
+git branch --> only list of  local branch details will be populated
+
+
+ master branch --> 
+if mulitple pepole try to modify the same file , same line then only we will get the conflicts
+if multiple people  try to modify  the same file, but different lines,  we won't get the conf
+
+rama --f1 2 line
+myself --> f1 2 line
+
+master --> x person --> f1  rd 
+dev ---> y person --> f1  --> 3rd 
+git checkout master
+git merge dev
+
+while y person working on the QA branch , while modifying the f1 file" , at the same time x person /developer working on the master branch and the file name is f1
+
+QA ----> copied/merge into the "master" branch 
+
+
+vi f1
+--
+1
+2
+3
+4
+5
+6
+..5000
+..
+10000
+
+<<<<<<<<<HEAD ---- master\
+sdfsdfgdfgdfgdfgfghfghfg  -- > changes done in the master branch
+===============
+dsfsdfddfggdfg
+>>>>>>>>>>>>>>>>>>
+there are multiple tools are there to help us to resolve the merge conflicts.
+------------------------------------
+	p4merge  tool
+----------------------------------
+sharepoint 
+confluence page  --> share a line to the development team 
+
+git fetch  command:
+
+what is the difference between git pull and git fetch?
+-----------------------------------------------------------------
+both are used to copy/bring the remote changes into the local repo, 
+git pull wll copy/merge the changes lcoal to working directory . 
+working directory
+
+whereas in case of git fetch , will present only local repo ,
+if we need t change from local to working directory, we need to execute merge command
+
+git pull = git fetch + merge
+
+git fetch remoterepourl
+git fetch remoterepourl qa
+git fetch --all
+
+
+
+
+
+ -------------------------------------------------------------------------------------------------------------------------------------------
+MERGE and REBASE:
+what is difference between Merge and rebase ? when we wil lgo for the merge and when we will for the reabse?
+-------------------------------------------------------------------------------------------------------------------------------------------------
+git log --oneline
+
+
+master --> m1 and m2 commits --> m3   m1,m2,m3,f1,f2 or m1,m2,x4 or m1 ,m2 m3, x4
+git checkout -b feature
+   m1 --> m2 --> f1 --> f2
+git checkout master
+git merge feature
+
+m1,m2,m3,f1,f2
+
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (master)
+$ git log --oneline
+c345fd7 (HEAD -> master) m3
+6f2990e m2
+2430f69 m1
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (master)
+$
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (master)
+$ git log --oneline
+f50846a (HEAD -> master) m4
+c345fd7 m3
+6f2990e m2
+2430f69 m1
+
+Admin@DESKTOP-
+
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (feature)
+$ git log --oneline
+c67d59b (HEAD -> feature) f2
+b29af53 f1
+c345fd7 m3
+6f2990e m2
+2430f69 m1
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (feature)
+$
+
+
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/mergea1 (master)
+$ git log --oneline
+24b305a (HEAD -> master) merged the changes
+f50846a m4
+c345fd7 m3
+6f2990e m2
+2430f69 m1
+
+
+m1, m2 m3 ----> f1 --> f2 --> --> m4
+              m3 --> f1 --> f2 --> 
+
+
+m1, m2 m3  --> m4--> f1 --> f2 -->
+              m3 --> f1 --> f2 --> 
+
+-----------rebase--------
+Admin@DESKTOP-4EI7QSI MINGW64 ~/rebaseex (master)
+$ git log --oneline
+a9ffb18 (HEAD -> master) m4
+64dc3f3 m3
+986b114 m2
+334800d m1
+
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/rebaseex (hotfix)
+$ git log --oneline
+86003f6 (HEAD -> hotfix) f2
+6754da9 f1
+64dc3f3 m3
+986b114 m2
+334800d m1
+
+
+97680f1 (HEAD -> master) m4
+86003f6 (hotfix) f2
+6754da9 f1
+64dc3f3 m3
+986b114 m2
+334800d m1
+
+m1, m2 m3 ---->m4
+              m3 --> f1 --> f2 --> 
+
+
+m1, m2 m3 --> f1 --> f2 --> m4
+           
+in case of rebase , we will maintain the commit history
+  
+in case of mege , we will not maintain the commit history , mew merge commitid id will be created.
+
+
+
+hooks in git
+p4merge 
+branching strategies
+
+dev //unit testing
+qa  -> 10 multiple 
+stage -->
+master 
+feature -->
+bug-fix/jira-111
+bug-fix/jira-112
+dev /jira-1
+hotfix
+.gitingore
+vi .gitignore
+f1
+f2
+f*
+git ammend
+
+
+
+
+         master replication i
+hotfix -> if we get any production issues and need to fix immemdiately, we wil lwork o nthe hotfix branch and will be tested and everything looks good , we will promtoe the changes to master branch
+
+release -->   oct 1st to  nov 5th 
+
+
+----------------
+
+------------------------Merge tool -------------------------------------------
+p4 merge tool :
+-------------------------
+git config --global --user.name "dsfdff"
+
+git config --global merge.tool p4merge
+git config --global mergetool.p4merge.path "C:/Program Files/Perforce/p4merge.exe"
+git config --global mergetool.prompt false
+git config --global diff.tool p4merge
+git config --global difftool.p4merge.path "C:/Program Files/Perforce/p4merge.exe"
+git config --global mergetool.prompt false
+git config --global difftool.prompt false
+
+
+git diff
+
+
+f1.orig
+        f123
+        f1_BACKUP_3622
+        f1_BASE_3622
+        f1_LOCAL_3622
+        f1_REMOTE_3622
+
+
+
+master --> f1 f2  
+feature -->f3 f4
+
+f3 ,f4 github remote repo with branch as "feature"
+we can merge code from "featuer" to "master"
+
+if we raise PR request from featrure to master: f1 f2, f3 ,f4
+
+
+if we created f3 in feature on c1
+if we crated f4 in featrure on c2
+
+git cherry-pick c1
+
+master
+git checkout -b qa  -b dev  --> not sure
+git checkout -b qa 
+git checkout -b dev
+git checkout -b stage
+
+  or 
+git branch qa
+git branch dev
+git branch stage
+git checkout dev qa stage
+
+repo --> private 
+
+
+ --------------------------------hooks-------------------------------------
+
+pre-commit.sample
+mv pre-commit.sample pre-commit
+pre-commit script will be invokied while  executing the "git commit" command
+dev1 --> jira 112  -r1 relase
+   jira 12 --- s1
+
+each and every developer while commiting the code, commit mesage should  be start with jira id  atelast one word
+
+git commit -m "jira-12 test"
+jira -112-- in-progess 
+r1
+open status
+closed status
+
+git push 
+
+--------------------------------------------------------------------------------
+
+https://git-scm.com/book/en/v2/Git-Basics-Tagging
+git tag
+git diff
+
+
+from dev --> qa flast 2 weeks whatver the deve;lopment team done the changes ... 100 commits ,
+"release" branch 
+
+from date
+
+c1, 
+
+to date
+11th day early morning , 
+
+tags in the git is : c1 -c100 , 4.1, d1-d200 4.2 , ..  5.1 
+git tag  
+
+
+------------------------git tag-----------------------------------
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ ls -ltr
+total 0
+-rw-r--r-- 1 Admin 197121 0 Nov  7 19:44 f1
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ ls -tlr
+total 0
+-rw-r--r-- 1 Admin 197121 0 Nov  7 19:44 f1
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git log --oneline
+4773970 (HEAD -> master) tested
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ touch f2
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git add .
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git commit -m "f2"
+hello
+jira status should be in open status
+[master fd22d4c] f2
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 f2
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git log --one
+fatal: unrecognized argument: --one
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git log --oneline
+fd22d4c (HEAD -> master) f2
+4773970 tested
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git tag -a v1.9 fd22d4c
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git tag
+v1.9
+
+Admin@DESKTOP-4EI7QSI MINGW64 ~/hooks (master)
+$ git log
+commit fd22d4cf2479af501e7fa96fde895748c0caed08 (HEAD -> master, tag: v1.9)
+
+
+
+git init
+git add .
+git commit -m "message"
+git push
+git remote -v
+git clone url
+git pull
+git fetch url
+git remote add origin url
+gi status
+git log
+git log --oneline
+git cherry-pick commitid
+git branch 
+git branc -a
+git checkout branchname
+git checkout -b branchname
+git branch -d branchname
+git stash
+git stash apply
+git stash apply stashid
+gi stash list
+git stash pop
+git stash pop stashid
+git stash drop stashld
+git tag
+git diff
+git merge --squash branchname
+git rebase branchanme
+git reset --soft HEAD~2
+git reset --mixed HEAD~N 
+git reset --hard HEAD~N   here is no. of commits to be resetted
+git revert commit-id
+hooks 
+PR request
+
+
+
+3ffc961 (HEAD -> master) f4 R6.1
+90288b6 f3   
+90288b7 f4
+90288b8 f5
+90288b9 f6
+90288bA f7
+90288bb f8
+90288bc f9
+fd22d4c (tag: v1.9) f2
+4773970 tested
+
+R6.1 -----> R6.1
+
+
+
+
+
+
+
+
+
+
+
+--------------------Jenkins------------------------------------------
+
+what is a jenkins?
+-------------------------
+Jenkins is an integration which will help us to build the CI/CD pipepline.
+
+soanrqube, maven and git, ansible. docker, slack ,promthes, grafna, valut, kubenertes
+
+Continuous integration/ continous delivery/continuos deployment flow  --> CI/CD pipeline
+
+we have the LTS , quarerly once/ , weekly release , jenkins will release a patch/minor version 
+
+what is latest verrsion of jenkins ?
+ 2.414.3 LTS 
+
+what are the pre-requiestes to install the jenkins?
+default port of jenkins: 8080
+
+2.312 --> x -y z -- 2.414.3 ->
+-------------------------------------------
+Dashboard 
+Manage Jenkins -->  heart menu option for the jenkins
+Manage Jenkins --> configure system
+                          --> manage plugins  --> update plugins/avaiable plugins/installed plugins/advanced configuration  
+                          --> tools /global tool configuration
+
+
+everying in the jenkins we call as "plugins"
+
+i would like to integrate Git with jenkins, " git plugin need to install"
+to install anyplugin , we need to go to manage jenkins -> manage plugins --> avaialbe plugins --> git []
+sonarqube, we need a plugin , sonarqube integration 
+                            
+Manage jenkins --> configure system --> 
+jenkins need to talk with sonarqube , 
+we need to pass the sonarqube credentials to the jenkins 
+               name: soanrubqe
+               url: http://localhost:9000
+               token : 
+
+manage jenkins --> tools --> java/git/maven/dependencycheck 
+                                            java: 
+                                             name: Java-11
+                                              path: C:\Program Files\Java\jdk-11.0.13
+
+
+view in jenkins:
+--------------------------
+what is a view ?
+in jenkins , we used call as "jobs"
+
+Views in Jenkins allow us to organize jobs and content into tabbed categories, which are displayed on the main dashboard. As a Jenkins instance expands, it is logical to create associated views for appropriate groups and categories.
+
+
+we have multiple teams, how to differentiate jobs from one team another team.
+
+Deposit team     loan      services   payment   
+
+
+what are all the different types of jobs exists in jenkins?
+---------------------------------------------------------------------
+freestyle job  --> 
+maven job    -->  classic jobs   // muliple plugins 
+multibranc pipeline
+pipleline   --> which can be implemented with the help of code  declarative pipeline/groovy script code
+
+
+new item  -> to create a new job 
+configure  --> to edit the job 
+delete
+rename
+Build now -- >to run the jobs
+
+maven plugin 
+--------------------------------------------------------------------------------
+what are all the different ways we can trigger the job in jenkins:
+---------------------------------------------------------------------
+build periodically    ---> cron tab syntax  for every 15 mins my job need to run 
+--------------------
+*/15 * * * *
+
+poll scm:
+--------------
+*/15 * * * *
+
+8:15 
+8:17 modify the changes
+13 mins 
+
+
+webhooks:
+----------------
+project level of the github accout 
+
+events:
+ push []
+ PR request  []
+ approved the PR request []
+
+
+upstream and downstream 
+-----------------------------------------
+A ----> B --->C
+
+A 
+|
+|
+B
+|
+|
+C
+---------------------------------------------
+
+
+
+
+
+cron tab in linux  from the youtube
+
+* * * * *
+
+0 11 1 * 
+https://crontab.guru/#0_11_1_5_6
+
+sonar.properties
+
+------------------------------------------------------------------
+password encryption in sonarqube
+-----------------------------------------------------
+https://docs.sonarsource.com/sonarqube/9.6/instance-administration/security/#settings-encryption
+
+
+
+
+https://www.jenkins.io/download/  --> download the war file. 
+java -jar jenkins.war --httpPort=8087
+
+
+admin
+password 
+
+
+Please create new freestyle jobn in Deposit_Team view.
+
+
+we need to specify the main 2/3  paths to the jenkins .
+
+path of the jenkins
+path of the maven
+path of git
+
+manage jenkins --> tools or Global tool configuration --> to specify the tools path 
+
+
+
+mvn clean compile
+                 test package verify install deploy 
+
+
+if i build/ran my job 50 times, will maintiain the history/log of all  thes 50 build history  -> 
+i would liek to maintain the build history of last 5  builds.
+last 5  builds history alone need , old build history not required
+we need to install the corresponding plugin.
+
+
+ 
+Discard old build --> for this  plugin we no need to configuration at jenkins level
+
+manage jenkins --> configure system -->
+
+we need to modify the job to use this plugin
+
+
+last 3 days builds history , in this case doesnot matter the no of builds.
+
+Plugins in jenkins:
+------------------------
+Discard old build 
+
+
+
+Generate the encrypted values of your settings
+Go back to Administration > Configuration > Encryption and use the form that has been added to the interface to generate encrypted versions of your values.
+
+
+
+Use the encrypted values in your SonarQube server configuration
+Encrypted values can either be set in SonarQube or copied into <SONARQUBE_HOME>/conf/sonar.properties
+
+sonar.jdbc.password={aes-gcm}CCGCFg4Xpm6r+PiJb1Swfg==  # Encrypted DB password
+...
+sonar.secretKeyPath=C:/path/to/my/secure/location/my_secret_key.txt
+
+ 
+
+
+
+
+sonar.host.url -->   the server URL	
+http://localhost:9000
+sonar.projectKey --> The project's unique key. Allowed characters are: letters, numbers, -, _, . and :, with at least one non-digit.
+For Maven projects, this defaults to <groupId>:<artifactId>
+sonar.projectName  --> Name of the project that will be displayed on the web interface.
+<name> for Maven projects, otherwise project key. If not provided and there is already a name in the DB, it won't be overwritten.
+sonar.projectVersion --> The project version.
+<version> for Maven projects, otherwise "not provided". Do not use your build number as sonar.projectVersion.
+sonar.token --> The authentication token of a SonarQube user with either Exe
+cute Analysis permission on the project or Global Execute Analysis permission.
+sonar.ws.timeout --> Maximum time to wait for the response of a Web Service call (in seconds). Modifying this value from the default is useful only when you're experiencing timeouts during analysis while waiting for the server to respond to Web Service calls.
+default value: 60
+sonar.projectDescription --> The project description. --> <description> for Maven projects
+sonar.sources -->Comma-separated paths to directories containing main source files.
+Read from build system for Maven, Gradle, MSBuild projects. Defaults to project base directory when neither sonar.sources nor sonar.tests is provided.
+sonar.tests--> Comma-separated paths to directories containing test source files.
+Read from build system for Maven, Gradle, MSBuild projects. Else default to empty
+sonar.projectDate: Assign a date to the  analysis. This parameter is only useful when you need to retroactively create the history of a not-analyzed-before project. The format is YYYY-MM-DD, for example, 2010-12-01. Since you cannot perform an analysis dated prior to the most recent one in the database, you must analyze and recreate your project history in chronological order, the oldest firs
+default value: current date
+sonar.working.directory--> Set the working directory for an analysis triggered with the SonarScanner or the SonarScanner for Ant (versions greater than 2.0). This property is not compatible with the SonarScanner for MSBuild. The path must be relative, and unique for each project.  Beware: the specified folder is deleted before each analysis
+default value: .scannerwork
+
+
+for more please refer below url
+https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/analysis-parameters/#:~:text=Each%20plugin%20and%20language%20analyzer,in%20the%20UI%20when%20possible.
+
+
+-------------------------------------------------------
+         plugins in Jenkins:
+-------------------------------------------------------
+
+Discard old build -->
+Build timeout -->  if my job is running more than 30 min's due to some issues resources not avaialbe/deadlock from the applciaiton side, job is runnig more than 30 mins , compared with normam build time is 2 mins' 
+unncessarly resources cpu/memory/spce will be consume, space issue error s will occur.
+fail the job if take more that 3*2 = 6 mins
+
+Timestamper --> add the timestamp before each line of the log (console output of a job)
+
+
+Rebuild -->
+
+
+we have configired job to trigger in such a way that, whenver you push the code, job will trigger, otherwise job will not trigger.
+
+my job got failed and code changes are not requires ,something issue from jenkins side. 
+space issues , 
+
+build with parameters:
+
+java: 1.8
+maven: 3.5
+envi: dev
+
+
+Nested view plugin: -->
+ 
+we can created view within another view (nested view's can be created)
+Deposite team --> R6
+                              R 6.1
+                              R6.2
+          
+
+
+
+Folders Plugin --> 
+
+Folder properties
+
+Folder based Authorization strategy
+
+
+Folder --> views/nested views/jobs
+view --> nested view/jobs
+
+
+
+------------------------------------------------
+HTML Publisher
+Favourite
+Parameterized trigger
+Run condition
+conditional build step
+Subversions
+gitlab
+git
+bitbucket
+Role Based authorization strategy
+Personal view
+Build timeout
+JDK parameter
+Discard old builds
+maven
+Rebuild
+nested view
+Job config history --> 
+This plugin saves a copy of the configuration file of jobs and agents ( config. xml ) for every change made and of the system configuration ( <config-name>. xml ). You can also see what changes have been made by which user if you configured a security policy
+Build with parameters
+Fail the build
+
+
+what are all the different ways we can install the plugins in jenkins?
+----------------------------------------------------------------------------------------
+1. got to manage jenkins --> manage plugins --> avaialble plugins
+2. via jenkins CLI also we can install the plugin
+3. using the direct upload.  we can downlaod the .hpi file
+all the jenkins plugins will have an extension of .hpi, and we need copy it into plugins folder will be there , 
+  we can upload from the jenkins itself
+
+
+C:\Users\Admin\.jenkins\plugins
+
+N --> 1229
+N-1 --> 1227
+
+--------------------------------------
+authorization in jenkins:
+-----------------------------------------
+i need give read/build now acces to the x person --> how can i do that?
+I would like give compelte admin acess to y person --> how can i do that/
+i would like give only edit and build now  acces to z person --> how can i do that?
+
+3 authorization methods are exists.
+
+matreix based authiorization --> jenkins /across all the jobs
+project based matrix authorization --> speciify to a job  
+role-based authorization stragey -->
+test --> test
+dev --> dev-
+qa -->qa-
+
+
+
+
+x, y z , in the real time, LDAP.Active directory will be integrate with the jenkins ///all the users will exists ,
+ i no need to create a user again
+
+we don;'t have the LDAP integration right now. 
+we need to create users
+
+user1 --belongs to deposit --. he needto build/view his team jobs , why we need to give permission ot other team jobs 
+
+
+
+
+a  --> x
+b -->x
+c -->x
+
+
+
+
+
+
+----------------------------------------------------
+Types of jobs :
+
+Upstream and downstream jobs
+---------------------------------------------------
+A --> B ---> C -->A ->B->C->A->B ->C->A
+
+
+
+Job A --> i will click on "build now" -
+  
+
+Job B --> i have to say to job b, look for job A, whenver job a Get sucess/fail/aborted, you can run 
+
+
+Job C --> i have to say to job c, look for job B,, whenver job B Get success/failure/aborted/ you can run
+
+ trigger Job A --> 
+--------------------------------------------------------------
+my requirement this A-> B -> jobs need to go via loop. How can i do this?
+
+
+A --> B ---> C -->A-B-C
+----------------------------------------------------
+Maven project job :
+----------------------
+'maven' plugin.
+
+
+how to trigger the job :
+----------------------------
+till now we have trigger the job manually , by clicking on the "Build now" button.
+
+Build periodically 
+----------------------------
+for every miniute m job need to run 
+
+cron tab syntax 
+
+cron tab syntax in linux
+* * * * * 
+
+https://crontab.guru/
+
+if i didn;t modifyied the code, still my job will run , output will be same , there is no difference from the previous build to current build.
+
+whevener i modify the code, job need to trigger: this is main advntag of the poll scm.
+-----------------
+poll scm
+
+*/15 * * * * -->
+16th minute , modfied the code, , trigger my job need to wait 14 mins , develoepr time will be wasted. 
+to avoid this we will go for the very very important opton is "webhook"
+
+wheenver i push the code my job need to trigger.
+
+
+GitHub --> this plugin need to install
+
+
+
+-------------------------------------------------
+pipeline jobs:
+
+-----------------------
+multiple branch job :
+------------------------------------
+multibranch pipeline  -- this plugin need to install
+-----------------------------------------------------------------------------------------------
+
+How to integrate the soanrqube with jenkins:
+-------------------------------------------------------------
+how to specify the path of the tools java,maven and git
+Sonarqube:-
+CI->continous integration : whenver we/developer pushed the code to the github account, jenkins job will trigger, 
+as a first step will clone the code,code compilation will happen (mvn clean install) then wil lexecute the unit test cases and the will generate the code coverage as well,generate the package , type of the will be considered from the pom.xml and the if any integration tests cases are there will be eecuted. once everying(build) get sucess, we will check the quality of the code with the help of the sonarqube tool.,will send the email notification to the developement team , if case of build failures we will sent out notication to mattermost/slack channel , then we will sedn the job data to the promethes  for monitoring purpose.
+we can see how frequently specified job is failing and  etc..  
+promethes -> influex  -> grafana for pictorial reppresentational 
+
+
+
+plug in name -> soanrqube scanner
+
+whenver we are plannign to integrate any tool with jenkins -->
+corresponding tool plugin need to isntalled
+ 
+we need to specify the tool(soanrqube) credentials/url  to the jenkins , then only jenkins will interact with  soanrqube/tool.
+
+com.mycompany.app:my-app
+
+hello.java --> 
+hello.js
+hello.css
+hello.html
+
+sonar.properties
+-----------------
+-Dsonar.host.url=http://localhost:9000/
+-Dsonar.login=88ffb16d31c8bac8e3cc01acc351da9427a4a1ce
+-Dsonar.projectDescription=myfirstproject
+-Dsonar.projectKey=testone
+-Dsonar.projectName=mysecondproject
+-Dsonar.projectVersion=3.0
+
+src
+  main
+     java
+     resource
+        sonar.properties
+in the pom.xml file also , we can specify sonar properties.
+-----------------
+
+
+
+
+
+
+
+
+pom.xml
+
+<package>war</pacakge>
+
+validate
+compile
+test
+pacakge
+verify
+install
+deploy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+How to install the git in windows?
+------------------------------------------
+
+
+current version of git is 2.42.1
+
+https://git-scm.com/download/win --> to install the git for windows
+
+
+
+
+
+
+---------------------------------------------------------
+linux admin/commands
+RHEL/centols : yum is the package manager
+yum install git
+apt-get install git 
+
+package mamagner in ubunut
+maven plugins 
+in linux environment, everythign is package
+
+pacakge --> git
+how to install the package in ubunut
+apt-get install git
+----------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+we will 
+
+upgrade the sonarqube from 8.9(current LTS version) to 9.0 LTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+   
+       
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+com.xxx.bank
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Metrics:
+-------------
+
+
+
+
+
+
+
+
+
+
+
+
+vulnearnilite   SAST
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+What are all the different typs of issues exist in sonarqube?
+
+
+what are all the different severitories exists in sonarqube
+
+
+what is the concept of New code and Overall code?
+
+
+
+
+
+
+2. 0
+
+
+
+
+2.1
+1
+2
+3
+4
+5
+8
+------
+sum
+------
+
+2.2
+
+
+
+new code can be defined in 3 ways:
+previous version
+no.of days
+specific analyis
+
+
+-Dsonar.host.url=http://localhost:9000/
+-Dsonar.login=88ffb16d31c8bac8e3cc01acc351da9427a4a1ce
+
+
+
+groupid:artifactgid
+
+-Dsonar.projectDescription=myfirstproject
+-Dsonar.projectKey=testone
+-Dsonar.projectName=mysecondproject
+-Dsonar.projectVersion=3.0
+
+
+
+mvn sonar:sonar -Dsonar.projectKey=com.mycompany.app:my-app -Dsonar.host.url=http://localhost:9000 -Dsonar.login=88ffb16d31c8bac8e3cc01acc351da9427a4a1ce
+
+
+
+if one job is running other job shouldn;t run -->
+
+A job output should be the input of B job
+
+
+Build Blocker plugin:
+----------------------------
+This plugin blocks a build if one of the given jobs is running. The blocking behaviour can be configured to block builds on node or global level and to scan the queue and block if blocking jobs are about to run.
+
+
+
+multiple jdk version are avaialbel in my system
+
+one team/applciation (1 job/ 10 jobs) --java 8   --job1   -> node1  // virtual machine
+one team/applciation (1 job/ 10 jobs) --java 20 -->job2  --> node2 //virtual machine
+one team/applciation (1 job/ 10 jobs) --java 11 --> job3 --> node3 //
+one team/applciation (1 job/ 10 jobs) --java 17 -->job4 --> node4 //
+
+
+JDK parameter --> plugin 
+
+one node ->manager -->.main jenkins machine
+
+10000 --> one machine , load may be hugge
+
+master --> slave machine 
+-----------------------------------------
+1 core cpu --> I/O
+4 core cpu --> 10 jobs at a time as well
+
+java8 --> node1 --> label --> java8 (job1) -->  node1 goes down
+java8 --> node1a --> label --> java8 (job1) 
+if i choose "use this node as much as possible" ---> 
+job2 can run on any node, i didn't restricted that this job nee dto on only on node2
+
+job2 --> java8 
+
+betwenn 6 am to 8am only my node should be in online, remaining time has to got to offline.
+
+
+
+node and lable parameter -->
+
+
+for all of you one task:
+---------------------------------
+plungins --> available plugins ---> 
+
+
+Pipeline jobs:
+---------------------
+t‎ill now we didn;t wrote any code to implement the CI/CD pipelien. now whatever we have implemented via class jobs(free style/maven) we will convert them into code.
+why we need to convert them into code?
+-------------------------------------------
+tomorrow our jenkins machine/vm got crashed, we loosr all our data. , it will take lto of tiem to create the classic jobs,
+ here classic jobs are not storing anywhere
+
+we will implement our CI/CD jobs in the form of code, this code will be stored in the Github.
+in this case, even my jenkins machine get crash also ,code there, it will less tiem to configire the jobs
+tomorrow if we want to moidify tany one of the parameter for all jobs (1000), each and evry need to go then click , "configure" and do the changes, it is timce consumption.
+if we have a code , we will clone it, we will modify the code.
+that is the reason , industry except pipeline as code skill, instead of the classic jobs.
+
+----------------------------------------------------
+pipeline {
+
+    agent { lable 'java11' }
+
+  stages {
+    agent { node { label 'labelName' } }
+    stage('checkout') {
+      steps {
+        echo "hello"
+      }
+    }
+   stage('build') {
+    agent { lable 'java11' }
+     steps {
+     echo "hello build" 
+   }
+   }
+  stage('code qaulity') {
+   agent lable { 'java11' }
+    steps {
+      echo "code quality"
+   }
+  }
+  stage('dependency check') {
+    agent lable { 'java11' }
+    steps {
+      echo "Depe"
+   }
+      
+  }
+  stage('deploy') {
+  agent lable { 'java11' }
+  steps {
+      echo "code deploy"
+   }
+  }
+  stage('email notification') {
+  agent lable { 'java11' }
+  steps {
+      echo "email"
+   }
+  }
+}
+
+post {
+ success {
+    echo "sending an email notification"
+  }
+ failed {
+  echo " sending failed status to slack group/mattermost group "
+}
+always {
+   echo " sending log/details to prometheus"
+}
+
+changed {    //failed  --> success
+   echo " will execute only when the build status changed from previous to current status"
+}
+
+fixed {    //previous build status --> failed/unstabled --> success
+    echo  " fixed condition"
+}
+
+regression {
+
+  echo " regression"
+}
+
+
+}
+
+
+
+difference between declarative and scripted pipeline?
+------------
+declarative:
+-----------------
+pipeline {
+
+
+}
+
+scripted pipeline:
+-------------------
+node {
+
+}
+
+
+
+agent keyword will have 
+any :
+none
+label
+node
+
+-------------------------------------------------------------------------
+need to integrate the sonarqube with gitlab ci/cd pipeline?
+------------------------------------------------------------------------------
+first we need to set up gitlab ci/cd pipeline
+then we can add the code to integrate soanarqube with gitlab.
+
+---------------
+Gitlab 
+---------------
+
+gitlab -runner
+
+------------------
+
+
+
+
+
+
+
+Multi_branch pipeline:
+---------------------------
+
+there is one requirement, where there are multiple branches are present , for  each branch the pipeline need to run.
+in my repo 5 branches are there. 
+we need to create 5 separate jobs to run the code on each branch.
+instead of that if we have requirement, we need to run the job for all the branches
+
+Multibranch Pipeline  -- >this plugin need to install.
+
+
+Repo to fork the project: https://github.com/venkatn087/jenkins-example
+
+
+
+
+
+
+nexus/tomcat
+--------------------------------------------------------------------------------------------------------------------------------
+we will create a delaclrative pipeline by integrating all the tools git/maven/soanrqube/nexus/tomat?
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+ today we are discussing about the "nexus" tool?
+
+why do we need this tool?
+-------------------------------------------
+
+mvn clean compile, --> . class files will be generated
+mvn clean package --> .class --> jar file.
+this jar need to send it to some other people/team?
+can i send it over email
+huge / .jar file size also grow it may be .gb's 2 gb
+we can store in github/gitlab/bitbucket?
+
+to strore the artifacts we need a separate tool --> nexus, artifactory, jforg 
+
+
+maven --> jar file is called as "artifactory":
+
+ docker --> docker images --> docker hub --> public repo // nexus
+javascript ->
+python
+yum 
+apt
+
+maven --> 3 types of repo exists..
+local repo -> ${user_home}/.m2
+remote repo ---> we can use "nexus" as a remote repo tool
+cnetral repo --> maven central repo https://mvnrepository.com/repos/central
+
+pom.xml --> junit 
+
+100 people. junit --> no need to download plugin in central repo 
+
+when i try to compile the code, i also junit, nexus repo, no need to download again from the internert
+
+
+in nexus: everything is called as "repositories":
+
+open soure and paid version also there
+nexus OSS --> open source nexus oss 2.10,2.8,2.12 --> 2.x
+nexus oss --> open source nexus oss -->3.x
+
+nexus pro -->
+nexus tool developed by the sonatype company 
+nexus also called as "sonatype nexus"
+
+
+Nexus Repository 3.62.0: 
+3.63.0
+
+3.62.0
+ 
+pre-requisite to install the nexus is: java-8
+
+default port for the nexus tool is 8081
+http://localhost:8081    --> 3.62.0
+http://localhoost:8080  --> 
+http://localhost:9000 --> 9.9 LTS
+
+
+each repo will have a 
+name:each repo will havea name, you can give any name you like it
+type: 
+format
+status
+url
+healthcheck
+
+there are 3 types of repositories exist:
+-------------------------------------------------
+group: collection of repo's (it may be proxy + hosted)// read permission/ we can't edit 
+proxy --> maven cnetral repo -> proxy to the nexus -- so and so url download it 
+hosted  --> stored location
+
+.jar, need to upload into the nexus ,  hosted type repo, 
+
+what is the format of the repository:
+-----------------------------------------------------------------
+maven is a build tool , for this format is maven2
+docker , ---format is docker
+
+
+for maven we have 2 types of hosted repositories:
+1. snapshot --> in the pom.xml /version tag will be there <version>1.0-SNAPSHOT</version>  <version>1.0</version>
+-SNAPSHOT or -text , it is in-developement stage, this artifact is not stable, so to stroe all teh developement/unstaled artifacts we need a sepearte repo , snpshot
+1. snapshot hosted repo
+2. release hosted repo
+
+2. release
+3. ,mixed
+if we didn;t modifed the code, mvn clean package, 1 time will store in the nexus 
+
+<distribution management>
+<url>http://localhost:8081/repository/maven_test_hosted/</url>
+<url>http://localhost:8081/repository/maven_test_release/</url>
+</distribution management>
+
+<repositories>
+<url>http://localhost:8081/repository/maven_test_group/ </url> 
+</repositories>
+
+
+what is the differences between the SCM and artfactory tools ?
+--------------------------------------------------------------------------------
+
+wht is the current version fo the nexus tool are we using?
+
+
+what are all the different similar tools exists in the market?
+
+
+
+how may ways we can  uplaod the artifact into nexus:
+4 ways:
+1. pom.xml
+2.jenkins
+3.ommand line
+4.manual
+
+
+
+groupID
+artifactID
+version
+type of the package zip/zar/war/ear
+to which repo need to uplaod?
+
+http://localhost:8081/repository/maven_test_release/testone/nexustartifact/1.0/nexustartifact-1.0.jar
+
+<dependency>
+  <groupId>testone</groupId>
+  <artifactId>nexustartifact</artifactId>
+  <version>1.0</version>
+</dependency>
+
+
+
+
+1. manually  upload the artifact into nexus:
+--------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+2. via mvn command line how to upload the artifact into nexus?
+-----------------------------------------------------------------------------
+
+mvn deploy:deploy-file -Durl=http://localhost:8081/repository/maven_test_release/ -Dfile=my-app-2.1.jar -DgroupId=comm.mycompany.app -DartifactId=my-app -Dpackaging=jar -Dversion=2.0.0 -DrepositoryId=mavenreleaserepo
+-Drepository.login=admin -Drepository.pwd=admin
+
+-Drepo.id=myRepo
+
+GAV: gav parameters required to differentiate from one artifact into another artifact.
+
+
+Jenkins with soanrqube 
+if jenkins need to interact with sonarqube means , 
+we have specified the sonarqube credentials/url at the jenkins level
+
+maven with nexus
+in the maven (someplace) we need to specify the nexus credetials
+
+issue: unable to pass the credentials 
+--------------------------------------------------------------------------------------------------------------
+
+3rd method: 
+
+uplaod the artifact by specifying the nexus details in the pom,xml/settings.xml , then at the jenkins job level 
+ we need to specify the maven command as "clean deploy"
+pom.xml:
+---------<distributionmanagement>
+   <id> anyname</id>   
+<url>
+
+   <url>
+<
+
+
+job level : clean deploy
+
+settings.xml:
+------------
+nexus credentials
+3.5: 
+<server>
+   <id>anyname</id>
+    <user>
+    <password>
+
+
+
+aprat from this we no need to specify other details at jenkisn job level.
+------------------------------------------------------------------------------------
+
+4th method:
+
+we no need to specify any nexus details in pom.xml
+
+we need to specify at jenkins level (job level)
+
+Nexus Artifact Uploader --> plugin need to install 
+
+now go to manage jenkins --> configure system -->
+----------------------------------------------------------
+
+Fork project: https://github.com/venkatn087/simple-java-maven-app
+
+
+
+
+
+git :
+
+modify 
+commit
+push
+
+
+-----
+.jar ---> nexus 
+
+.jar 
+
+-----------------------------------------------------------------------
+
+
+another important concept in nexus: 
+access
+how you will give an access to develoeprs based on different requirement?
+-------------------------------
+
+we have created  2 hosted , 1 proxy and 1 group (n of repo)
+
+Deposit team --> for their maven applciation ,created 2 hosted repo's  
+ 1 for snapshot
+2 releases
+
+how can i give an access to these 2 reposties for the developers present i nthe deposit team?
+
+user1 --> TL -> edit/admin permission
+user2 --> only read access
+
+
+
+https://help.sonatype.com/repomanager3/nexus-repository-administration/access-control/privileges:
+
+application:    nexus:nameoftheapplciation:actions  
+actions (create,read,update,delete) 
+nameoftheapplciation: 
+
+ nexus:blobstores:create,read  -->
+
+
+
+Repository Admin
+------------------------
+nexus:repository-admin:maven2:maven_test_hosted:{actions}
+actions -->browse,read,edit,add,delete 
+
+
+ex: nexus:repository-admin:nuget:nuget.org-proxy:browse,read --> means allow view of the repository configuration for the nuget format repository named "nuget.org-proxy"
+
+nx:repository-admin-maven2-maven-test-release-add
+
+nx-repository-view-maven2-maven-test-hosted-*
+
+* --all
+
+
+
+Repository View:
+--------------------------
+nexus:repository-view:{format}:{repository}:{actions}
+
+nexus:repository-view:maven2:*:delete
+
+
+browse,read,edit,add,delete
+
+
+
+
+Repository Content Selector
+repository-content-selector
+
+
+group --> collection of repo 
+
+
+
+https://help.sonatype.com/repomanager3/nexus-repository-administration/access-control/privileges
+
+----------------------------------------------------------------------------------
+
+if you remember ,we stroed the nexus credentials in settings.xml file as a plain text.
+we shouldn't store the password as plain text .
+in sonarqube, sonar.properties we have specifeid credentials a plain text, this is not good..
+-------------------------------------------------
+password encryption url: https://maven.apache.org/guides/mini/guide-encryption.html
+
+
+masterpassword: xyz which i only aware of it
+
+venkat@12345 --password first we will encrypt thsi password, will store it in a separate with file name: settings-security.xml
+
+synt: mvn --encrypt-master-password <password>
+
+
+mvn --encrypt-master-password venkat@12345
+
+o/p:   xfvsdsfwdfnsjfngwjrhlfkgmklfjweEFJL
+
+
+
+cd ${user.home}/.m2/
+vi  settings-security.xml
+<settingsSecurity>
+  <master> xfvsdsfwdfnsjfngwjrhlfkgmklfjweEFJL</master>
+</settingsSecurity>
+
+
+
+user1--> user1(nexus user password)
+user2  --> user2 
+admin --> admin
+
+mvn --encrypt-password admin
+sdfsdfsdfsdfdgdfkdf
+ 
+user3  --> 
+
+
+How to encrypt the password in soanrqube ?
+---------------------------------------------------------------
+https://docs.sonarsource.com/sonarqube/9.8/instance-administration/security/#:~:text=A%20unique%20secret%20key%20must,the%20Generate%20Secret%20Key%20button.
+
+
+
+if i want to see my applciation or .jar =file is created and uploaded (saved)in to nexus . 
+if we deploy into a servear, then only we can see the ouput.
+
+enter name : cvxcvxcv
+
+-------------------------------tomcat --------------------------------
+apache tomcat  is a server, where we will uplaod/copy our jar file into the server. we can see the ouptut.
+first we will downlaod the tocmat. 
+
+tomcat,8 , 9 10 ,11
+tocmat 8 , 8.1. ,8.5.96, 
+tomcat9 , 9.1. 92. 93
+tomcat10, tomcat 10.1, 10.2, 103
+
+
+java 1.8
+java 11
+java 17
+
+wget https://dlcdn.apache.org/tomcat/tomcat-8/v8.5.96/bin/apache-tomcat-8.5.96.tar.gz
+
+
+default port for tomcat: 8080
+jenkins: 8080,
+
+
+deploy to container --> plugin need to install in the jenkins
+
+
+
+apache (httpd)  
+
+these tools are completely different.
+
+the 2 tools are developed "apache" componany)
+
+
+apache tomcat  --> single tool 
+apache-maven -->
+apache(httpd) -->
+
+
+war file project:
+-------------------------
+please fork the below url/project into your github account.
+https://github.com/venkatn087/spring3-mvc-maven-xml-hello-world
+
+for all directories we can give 755 permission
+chmod 755 
+find . -type f -perm 755 -exec chmod 644 {} \;
+chmod 644 .
+
+/bin for all .*sh only we are giving execute permission
+755
+startup.sh
+644
+tar the file
+compres the file by using
+ gzip  
+8.5.69-001
+chown -R root:root 8.5.69-001
+
+
+
+
+gitlab/mattermsot/sonarqube -->psotgreqsql
+
+mattermost from  7.2 to  8.0
+
+7.1.2
+
+major version: 7
+minor version: 1
+patch version: 2
+
+any tool if you are upgrading from minor version/patch version , it won;t be much changes in the latest version
+7.1.2 --> 7.1.3---> patch , they won't touch using the new version of database...
+7.1.2 ---> 7.2.0 --> minor verion is upgraded --> no new version of database
+
+whenver the major verion upgrade /release happen   , database version of they may change it from psotgresql 9.0 to postgresql 10
+
+7.x.x --> psotgresql 9
+8.x.x --> postgsql 10
+before (my tool is ) upgrading the actual tool (mattermost), first we need to take a backup of database.
+we need to upgrade the postgresq from 9 to 10. once it is success,, then mattermost need to upgrade.
+
+task: how to upgrade the postgresql from one version to another version?
+--------------------------------------------------------------------------------------------------
+
+postgresql as well need to learn.
+
+--------------------
+Apache :
+-------------------
+there i s one task --> apache upgrade --> 2000 
+
+apche 1.3, 1.4., 2.1.1, ,2.4.17, 2.4.57
+
+we need to from x version to 2.4.57
+
+if runbning version is 2.4.17--> 2.4.57
+
+unused version ->1.3, 1.4., 2.1.1
+first we need to remvoe the unused version .
+we need to upgrade from 2.4.17 to 2.4.57
+                                 1.3 to 2.4.57
+
+2.4.7 (from version) become unusedversin, 
+after 2 weeks or 3o days 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+https://sites.google.com/site/telugupadyaalu/potana-bhagavatam/dvitiyaskandham?authuser=0
+
+
+
+
+
+https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/
+
+
+
+
+
+
+
+
+
+
+
+wget https://dlcdn.apache.org/httpd/httpd-2.4.58.tar.bz2
+tar -xvzf httpd-2.4.58.tar.bz2
+cd httpd-2.4.58
+mkdir -p /opt/apache-httpd-server
+
+sudo chown ubuntu:ubuntu /opt
+./configure --prefix=/opt/apache-httpd-server/
+make    //do the compilation of jars /c++ files with the help of make command
+make install
+cd /opt/apache-httpd-server
+cd bin
+./apachectl -k start
+
+--------------------------------------------------------
+ Docker:
+--------------------------------------
+
+
+Github, maven, jenkins,soanrqube, nexus, tomcat
+
+via jenkins job, we used some plugin and then ....
+we can write a declarative pipeline,  // 
+hello.java , hello.class, test.hello.jar 
+
+
+
+why we need to sue the docker?
+
+
+virtualbox --> ubuntu -->
+
+hypervisor  --> 2gb/4gb ubunut/centos/rhel -->complete OS installing it.
+base os --> ubunut/cenotos/rhel 
+common fearure are there across all teh Operating system .
+why i need to downlaod and isntall 4.5 gb of OS for each vm?
+if need ubunut, 4.5GB
+if need centos 3 GB 
+
+consumiing the space..
+
+
+containariazation came into the picture.
+
+
+in my system , 
+cpu = 4 core cpu
+ram =16gb
+space 500gb
+
+
+each system min CPU 1core cpu
+RAM 4 GB 
+space 30 GB
+
+
+in my Dev environment, while working on the project from th scratch , i have installed java 1.8/maven3.4/nexus 3/plygins etc..
+ after completion of the code, i have to move this code int oQA environemtn, in this QA environment if the applciation/code need to run/execute means , we need to all the softwares 
+
+softwares which are presnet in one environment may not macth with ther other envionment , due this applciation will not run , we need to spend lot of time to understand.
+
+docker image, this image will be same across all the environment. 
+
+downlaod and excute it...
+
+
+docker version: 24.0.7
+-------------------------
+
+
+what is a dockerfile?
+------------------------------
+Dockerfile is a text file which contains set of instructions and arguments.
+vi Dockerfile
+
+FROM ubuntu
+RUN apt-get update
+ARG a=10
+ENV java_home=/opt/java11
+COPY file1.txt .
+ADD https://scvdvccvbcvb.tar.gz .
+WORKDIR
+USER
+VOLUME
+EXPOSE
+CMD
+ENTRYPOINT
+
+Intrcsutions --> FROM, RUN, ARG,ENV,COPY,ADD,WORKDIR, USR,VOLUME, EXPOSE,CMD,ENTRYPOINT
+ 
+FROM,
+
+in the Dockerfile, first instruction is the "FROM" instruction?
+Yes, we can specify it, only one instrcution is "ARG"
+
+FROM --> by using the from instructuion we will specify the base image.
+
+FROM java-1.0
+you can choose the base image, based on the requirement.
+
+purpose of the FROM instrctuion, choose the base image,
+
+we can specify our base image in the dockerfile with the help of the FROM instruction.
+
+
+
+FROM ubuntu
+
+
+
+RUN instrcution: if we want to  specify/execute any linux command, we can the run instruction.
+
+RUN apt-get install curl wget git 
+RUN echo "hello"
+ 
+
+vi Dokerfile
+FROM ubuntu
+RUN apt-get update
+
+
+this is a Dockerfile, 
+i need to convert this docker file into an image.
+how can i do that?
+
+docker build -t firstimg .
+ 
+to build an image --> input  --> Dockerfile
+-f --> file , we need to specify the filename, but here not require, whenver the dockerfile name is "Dockerfile"
+ we no need to specify the dockerfile externally with the help of "-f" argument.
+
+scenario 2:
+vi hellodockerfile
+FROM ubuntu
+RUN apt-get udpate 
+RUN apt-get install curl
+RUN apt-get install wget
+
+4 layers 
+
+vi hellodockerfile
+FROM ubuntu
+RUN apt-get udpate && apt-get install curl && apt-get install wget 
+
+2 layers only 
+
+docker build -t secondimg -f hellodockerfile . 
+
+docker images --> to see the lsit of images present in your system
+
+
+Dockerhub --> please create a dockerhub account.
+helloworld
+
+how can i pull an image from Dockerhub(public registry) into local machice/your system
+docker pull ubuntu
+
+
+git pull
+git clone
+
+max we can create/specify 255 layers in an image
+
+
+
+
+how to push an image into Dockerhub?
+------------------------------------------------------
+vi Dockerfile
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install curl -y
+RUN echo "hello"
+
+
+if we want to push an imge into Dockerhub, the image name should be
+dockerhub username/iamgename:tagname
+firstimage/1.0  --> venkatn087/firsimge:1.0
+or 
+while building an image itlsef i can give my image name as venkatn087/firsimge:1.0
+
+
+
+Docker prune --> to remvoe the unused images.
+
+Dockerfile --> image ---> container. 
+container1 is using the image1
+container2 is using the image2
+
+
+what is a container?
+------------------------
+Container is nothing but an instance of an image.
+
+we can create container in 2 ways
+1. interactive mode
+docker run -i con1 venkatn087/secimg:2.0
+3. detached mode
+
+
+if we want to see the running containers ,we need to execute the 
+docker ps 
+if we want to see all the cotnainers (running + stopped/exited cotnainers) then we need to use the 
+docker ps -a (all)
+
+--------------------------------------------------------
+How to remove/delete the containers automatically when it exit?
+----------------------------------------------------------
+
+docker container run –dt --name testcon busybox ping –c10 google.com
+docker ps
+docker logs testcon
+after 10 pings container got moved to exited status..
+docker container run --help | grep rm
+docker container run –dt –rm --name testcon busybox ping –c10 google.com
+docker ps –a
+Container is automatically deleted.
+
+Move the docker images across hosts:
+------------------------------------
+Developer A has created an application based on Docker, He has an image file in his laptop.
+He wants to send the image to Developer B over email.
+
+docker save command: it will save one or more images to a tar archieve.
+
+
+docker save busybox > busybox.tar
+
+docker load command will load an image from a tar archieve.
+
+docker load < busybox.tar
+
+FROM busybox
+RUN touch custom.txt
+CMD ["/bin/sh"]
+
+docker build -t myapp .
+docker images
+
+docker save myapp > myapp.tar
+
+ls -ltr
+
+docker images 
+
+docker rmi myapp
+
+docker load < myapp.tar
+
+
+========================================================================================
+======================ENV and ARG=======================================================
+========================================================================================
+Q)What is ARG and when we will nedd to use it?
+
+ARG are also known as build-time variables. They are only available from the moment they are ‘announced’ in the Dockerfile with an ARG instruction up to the moment when the image is built. Running containers can’t access values of ARG variables. This also applies to CMD and ENTRYPOINT instructions which just tell what the container should run by default. If you tell a Dockerfile to expect various ARG variables (without a default value) but none are provided when running the build command, there will be an error message.
+
+However, ARG values can be easily inspected after an image is built, by viewing the docker history of an image. Thus they are a poor choice for sensitive data
+
+
+The ARG instruction defines a variable that users can pass at build-time to the builder with the docker build command using the --build-arg <varname>=<value> flag.
+
+Q)what is ENV?
+ENV variables are also available during the build, as soon as you introduce them with an ENV instruction.ENV values can be overridden when starting a container, more on that below.
+
+1. Why use environment variables?
+There are two main reasons to use environment variable files:
+1. safety
+2. flexibility
+
+The ARG defines a variable to be used inside the dockerfile in subsequent commands. The ENV defines an environment variable which is passed to the container
+
+
+
+Dockerfile --> ARG --> Build image
+Dockerfile --> ENV -->NOT ACCESSIBLE at IMAGE level --> Running the container ENV variables can access
+
+ARG examples:
+--------------
+FROM centos
+ARG java
+RUN echo "Hello thank you  $java"
+
+docker build --build-arg java=1.8
+
+FROM centos
+ARG java=1.8
+RUN echo "hello thank you $java"
+
+docker build -t newimg .
+docker build -t newimg1 --build-arg java=11.0
+
+
+while buildign the image alone we can modify the ARG values.
+FROM centos 
+ARG java=1.8   
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+with the help of docker inspect image 
+
+sudo docker build -t newimage -f Dockerfile6 .
+sudo docker inspect newimage
+
+sudo docker build -t newimage --build-arg java=11.0 -f Dockerfile6 .
+sudo docker inspect newimage
+
+
+FROM centos 
+ARG java  
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+with the help of docker inspect image 
+
+sudo docker build -t newimage --build-arg java=11.0 -f Dockerfile6 .
+sudo docker inspect newimage
+
+
+
+while running the container we can modify the ENV values.
+FROM nginx
+ENV java=1.8
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+docker inspect container 
+
+sudo docker build -t newimage -f Dockerfile6 .
+sudo docker run -d --name envex newimage
+sudo docker exec -it /bin/bash
+root@453453456#printenv
+
+
+---------------
+
+CMD & ENTRYPOINT
+
+
+----------------------------------------
+FROM python:3.9-bullseye
+WORKDIR /usr/src/app
+COPY environprinter.py ./
+CMD [ "python3", "./environprinter.py" ]
+
+vi environprinter.py
+import os
+for k,v in os.environ.items():
+ print(k,v)
+
+--------------------------------------------
+FROM centos
+ENV var=1234
+RUN echo file1
+ENTRYPOINT["sleep"]
+CMD["120"]
+
+
+printenv
+
+sudo docker exec -itd -e "text=1234" /bin/bash
+================================
+FROM centos:7
+
+ARG user=application
+
+ARG httpd_package
+
+RUN yum -y install $httpd_package unzip     
+
+LABEL maintainer=venkat
+LABEL vendor=orgnization
+LABEL random=hello
+
+ENV HTML beginner-html-site-styled
+
+WORKDIR /var/www/html/
+
+ADD https://github.com/mdn/$HTML/archive/gh-pages.zip ./code.zip      
+RUN unzip code.zip && mv $HTML-gh-pages/* . && echo $HTML > ./env.html
+
+RUN useradd $user && chown $user:$user /var/www/html -R        
+
+USER $user
+
+RUN rm -rf code.zip $HTML-gh-pages/   
+
+USER root
+
+COPY cmd.sh /cmd.sh
+
+RUN chmod +x /cmd.sh
+
+CMD /cmd.sh
+
+
+
+vi cmd.sh
+
+#!/bin/bash
+echo "Starting httpd..."
+apachectl -DFOREGROUND
+
+
+sudo docker build -t mynewimg -f dockerfile3 --build-arg user=ricardo .
+
+
+sudo docker exec -it contianername bash
+
+ls -ltr
+
+see the username ...
+
+
+
+FROM ubuntu
+LABEL author=user1
+LABEL email=xyz@gmail.com
+RUN apt-get update
+COPY file1.txt .
+ADD https://github.com/venkatn087/simple-java-maven-app/archive/refs/heads/master.zip .
+RUN echo "hello"
+
+both COPY and ADD instrutions are used to copy the content from our system into inside container.
+
+COPY instruction:
+
+my applciation jar files will present in my system , i wolud like to copy this jar file into container.
+
+
+ADD instrctuion
+if we want to copy the files from remote location or https urls /tar/zip files we need to use the ADD only  eg: https://asdsfsdf.tar.zip
+
+
+whenver we created the container, default suer will be "root"
+what is home directory of the root suer is /
+/home/user
+
+
+WORKDIR --> to switch from one directory to anotehr directory inside the container, we need to use the WORKDIR instruction.
+
+
+
+Feature
+bug-fix
+hot-fix
+release
+
+there are 2 optioss.
+1. we need to go for the Developer edition this is paid version . ( sonarqube will chage the amountbased on the no.of lines of code is scanned)
+100000 lines in  --? $450
+2000000    $1000
+
+2. there is plugin in the internet which we need to use it.
+ it is a .plugin (.jar) to support the branch level analysis in community edition.
+there will be risk
+
+
+https://github.com/mc1arke/sonarqube-community-branch-plugin
+
+
+-------------------------------
+Expose instruction :
+
+The Expose instruction informs Docker that the container listens on the specified network ports at runtime.
+
+The expose instruction does not actually publish the port.
+it functions as type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
+
+FROM ubuntu
+RUN apt-get install service
+EXPOSE 9324
+CMD["service"]
+
+docker run -d --name nginx nginx
+docker ps
+we can see that nginx is listening on 80 port
+docker inspect nginx
+exposeports: {
+   "80/tcp": {}
+}
+docker run -d --name nginx2 -p 80:80 nginx
+(host port)80:80(containerport)
+
+FROM nginx:1.17-alpine
+COPY index.html /usr/share/nginx/html
+EXPOSE 9080
+CMD ["nginx", "-g", "daemon off;"]
+
+without expose instruction
+
+FROM centos:6
+RUN yum -y install epel-release && yum -y install nginx
+CMD ["nginx", "-g", "daemon off;"]
+
+
+ENTRYPOINT:
+----------------
+if we want to set the main command of image ,we can use the entrypoint
+Entrypoint doesn't allow you to override the command
+
+
+FROM bussybox
+CMD["sh"]
+
+docker run -dt --name ex1 image1
+
+docker run -dt --name con1 image1
+
+we can override the cmd commnd 
+docker container run -dt --name con2 image1 ping -c 10 google.com
+sudo docker ps 
+we can see that command is overwritten
+
+FROM bussybox
+CMD["sleep"]
+CMD["a"]
+CMD["b"]
+CMD["sh"]
+
+FROM bussybox
+CMD["sh"]
+
+FROM busybox
+ENTRYPOINT["/bin/ping"]   --> this is binary 
+build the image and create a container
+
+
+all previous CMD instrcution values will be overwritten and the final CMD instrctuin value will be considered
+
+
+
+FROM busybox
+ENTRYPOINT["/bin/ping"]   --> this is binary 
+build the image and create a container
+
+docker container run -dt --name con22 image2 -c 20 google.com
+docker ps 
+it's appended, not overwritten
+
+sleep 200
+binary : sleep , this will not change
+values of the command may vary, 200, 300, 400 etc.
+
+
+How to move the images across hosts?
+-----------------------------------------------
+docker save command will save one or more images to a tar archieve
+docker save image1 > image2.tar
+
+the docker load command will load an image from a tar archive
+
+docker load < bussybox.tar
+
+FROM busybox
+RUN touch test.txt
+CMD ["/bin/sh"]
+
+build an image
+docker images
+
+docker save myapp > myapp.tar
+
+docker rmi myapp (remove the image before load)
+docker load < myapp.tar
+
+---------------------------------
+
+Docker image prune command allows us to clean up unused images
+by default the above command will only clean up dangling the images
+Dangling images = image without tags and image not referenced by any container
+
+sudo docker images
+
+dangling images are the images where the name is not having
+docker image prune
+docker image prune -a (remove all the images which are not referenced by container)
+
+
+
+Flattening the docker images:
+---------------------------------------------
+Docker export image > myimg.tar   take an image where we have multiple layers
+
+cat myimg.tar | docker import -  img:latest
+
+
+
+CMD 
+ENTRYPOINT
+EXPOSE
+-----------
+for example you have built an image (after writing the dockerfile), you would like to copy this image into multiple VM's to test this functionality is working or not as per expectation, before pushing the image into Nexus
+i want to copy the image into multiple system.
+
+First we need to convert  single or multiple images into a tar file
+docker save myapp > myapp.tar
+
+docker rmi myapp (remove the image before load)
+docker load < myapp.tar
+
+Dangling images
+-------------------
+what is a dangling image?
+After  modifying the dockerfile, without changing the docker image name (i.e if we use the previous iamge name ), previous image name will be moved into "none" and tag also will be moved into "none", with same name new image will be created.
+
+The images with name "none" is called as dangling images.
+
+How to enable/create the dangling images
+First we need enable dangling feature.
+comamnd to enable the dangling image: sudo docker images -f dangling=true
+step1.wirte a docker file
+step2.build an image
+step3.modify the docker file
+step4: this time while building an iamge , don't change the image name.
+
+After  modifying the dockerfile, without changing the docker image name (i.e if we use the previous iamge name ), previous image name will be moved into "none" and tag also will be moved into "none", with same name new image will be created.
+
+The images with name "none" is called as dangling images.
+
+
+sudo docker build .
+It's not mandatory to give the image name in the docker build command.
+
+how to remove the dangling images?
+----------------------------------------
+sudo docker rmi $(sudo docker images -f dangling=true -q)
+
+
+
+
+
+Distroless images:
+-------------------------
+
+
+
+========================================================================================
+======================ENV and ARG=======================================================
+========================================================================================
+Q)What is ARG and when we will nedd to use it?
+
+ARG are also known as build-time variables. They are only available from the moment they are ‘announced’ in the Dockerfile with an ARG instruction up to the moment when the image is built. Running containers can’t access values of ARG variables. This also applies to CMD and ENTRYPOINT instructions which just tell what the container should run by default. If you tell a Dockerfile to expect various ARG variables (without a default value) but none are provided when running the build command, there will be an error message.
+
+However, ARG values can be easily inspected after an image is built, by viewing the docker history of an image. Thus they are a poor choice for sensitive data
+
+
+The ARG instruction defines a variable that users can pass at build-time to the builder with the docker build command using the --build-arg <varname>=<value> flag.
+
+Q)what is ENV?
+ENV variables are also available during the build, as soon as you introduce them with an ENV instruction.ENV values can be overridden when starting a container, more on that below.
+
+1. Why use environment variables?
+There are two main reasons to use environment variable files:
+1. safety
+2. flexibility
+
+The ARG defines a variable to be used inside the dockerfile in subsequent commands. The ENV defines an environment variable which is passed to the container
+
+
+
+Dockerfile --> ARG --> Build image
+Dockerfile --> ENV -->NOT ACCESSIBLE at IMAGE level --> Running the container ENV variables can access
+
+ARG examples:
+--------------
+FROM centos
+ARG java
+RUN echo "Hello thank you  $java"
+
+docker build --build-arg java=1.8
+
+FROM centos
+ARG java=1.8
+RUN echo "hello thank you $java"
+
+docker build -t newimg .
+docker build -t newimg1 --build-arg java=11.0
+
+
+while buildign the image alone we can modify the ARG values.
+FROM centos 
+ARG java=1.8   
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+with the help of docker inspect image 
+
+sudo docker build -t newimage -f Dockerfile6 .
+sudo docker inspect newimage
+
+sudo docker build -t newimage --build-arg java=11.0 -f Dockerfile6 .
+sudo docker inspect newimage
+
+
+FROM centos 
+ARG java  
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+with the help of docker inspect image 
+
+sudo docker build -t newimage --build-arg java=11.0 -f Dockerfile6 .
+sudo docker inspect newimage
+
+
+
+while running the container we can modify the ENV values.
+FROM nginx
+ENV java=1.8
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+RUN echo "Hello thank you  $java"
+
+docker inspect container 
+
+sudo docker build -t newimage -f Dockerfile6 .
+sudo docker run -d --name envex newimage
+sudo docker exec -it /bin/bash
+root@453453456#printenv
+
+
+---------------
+
+How to publish all arguments for Exposed ports?
+-----------------------------------------------
+we were discussing about an approach to publishing container port to host
+
+docker container run -dt --name webserver -p 80:80 nginx
+
+this is also referred as publish list as it publishes only list of port specified.
+
+
+there is a second approach to publish all the exposed ports of the container
+docker container run -dt --name webserver -P nginx
+this is also referred as a publish all
+in this approach, all exposed ports are published to random ports of the host.
+
+sudo docker container run -dt --name webserver nginx
+sudo docker ps
+curl 127.0.0.1:80
+
+sudo docker container run -dt -p 8080:80  --name web nginx
+sudo docker ps
+curl 127.0.0.1:8080
+
+sudo docker container run -dt -P --name web01 nginx
+ automatically assign a randon port number ...
+sudo docker ps
+curl 127.0.0.1:32768 here 32768 is the random port number.
+
+
+
+
+
+
+
+
+How to install docker-compose?
+--------------------------------
+Step1 . sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+Step2: sudo chmod +x /usr/local/bin/docker-compose
+Step3: docker-compose --version
+
+Reference document for docker-compose: https://docs.docker.com/compose/
+
+2 webapp 2 db 
+
+
+dockerfile
+we need to build N IMAGE SEPERATELY
+WE NEED to run a cotnainer 
+
+
+
+Example-1:
+------------
+sudo docker run -d --name nginx_con -p 8080:80 nginx:alpine
+
+vi docker-compose.yml
+
+version: '3'
+
+services:
+  web:
+    image: nginx:alpine
+    container_name: nginx_con
+    ports:
+      - "9090:80"
+
+
+
+subbune590@docker:~/dockercompose$ sudo docker-compose up -d
+WARNING: Found orphan containers (mysql) for this project. If you removed or renamed this serv
+ice in your compose file, you can run this command with the --remove-orphans flag to clean it 
+up.
+Pulling web (nginx:alpine)...
+alpine: Pulling from library/nginx
+59bf1c3509f3: Pull complete
+8d6ba530f648: Pull complete
+5288d7ad7a7f: Pull complete
+39e51c61c033: Pull complete
+ee6f71c6f4a8: Pull complete
+f2303c6c8865: Pull complete
+Digest: sha256:da9c94bec1da829ebd52431a84502ec471c8e548ffb2cedbf36260fd9bd1d4d3
+Status: Downloaded newer image for nginx:alpine
+Creating nginx_con ... done
+subbune590@docker:~/dockercompose$ sudo docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS   
+                                               NAMES
+7ab52688ca29   nginx:alpine   "/docker-entrypoint.…"   7 seconds ago   Up 5 seconds   0.0.0.0:
+9090->80/tcp, :::9090->80/tcp                  nginx_con
+28f450b73adc   mysql:5.7      "docker-entrypoint.s…"   6 minutes ago   Up 6 minutes   0.0.0.0:
+3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   mysql
+subbune590@docker:~/dockercompose$ 
+
+
+Example-2:
+-----------------
+
+vi docker-compose.yml    --> create file 1
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    env_file: env.txt
+
+
+vi env.txt 
+MYSQL_ROOT_PASSWORD=12345678
+SHOW=file
+
+subbune590@docker:~/dockercompose$ vi docker-compose.yml 
+subbune590@docker:~/dockercompose$ sudo docker-compose up -d
+Creating network "dockercompose_default" with the default driver
+Pulling db (mysql:5.7)...
+5.7: Pulling from library/mysql
+6552179c3509: Pull complete
+d69aa66e4482: Pull complete
+3b19465b002b: Pull complete
+7b0d0cfe99a1: Pull complete
+9ccd5a5c8987: Pull complete
+2dab00d7d232: Pull complete
+64d3afdccd4a: Pull complete
+6992e58be0f2: Pull complete
+67313986b81d: Pull complete
+7c36a23db0a4: Pull complete
+d34c396e3198: Pull complete
+Digest: sha256:afc453de0d675083ac00d0538521f8a9a67d1cce180d70fab9925ebcc87a0eba
+Status: Downloaded newer image for mysql:5.7
+Creating mysql ... done
+subbune590@docker:~/dockercompose$ sudo docker ps | grep mysql
+28f450b73adc   mysql:5.7   "docker-entrypoint.s…"   14 seconds ago   Up 11 seconds   0.0.0.0:3
+306->3306/tcp, :::3306->3306/tcp, 33060/tcp   mysql
+subbune590@docker:~/dockercompose$ 
+Docker compose example: https://docs.docker.com/compose/gettingstarted/
+
+
+Volumes in Docker-compose:
+-------------------------
+sudo docker-compose -f dockercomposefilename up -d
+
+./public:/usr/share/nginx/html
+vi docker-compose.yml
+version: '3'
+services:
+  web:
+    image: nginx:alpine
+    container_name: nginx_con
+    ports:
+      - "9090:80"
+    volumes:
+      - /usr/share/nginx/html
+
+sudo docker inspect containername ---> to find the anonymous volume..
+Anonymous Volume 
+                Type": "volume",
+                "Name": "1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac99b0ef",
+                "Source": "/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac99b0ef/_data",
+                "Destination": "/usr/share/nginx/html",
+                "Driver": "local",
+sudo -su root
+cd /var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac99b0ef/_data
+root@docker:/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac
+99b0ef/_data# ls -ltr
+total 8
+-rw-r--r-- 1 root root 615 Jan 25 15:26 index.html
+-rw-r--r-- 1 root root 497 Jan 25 15:26 50x.html
+vi index.html   --------------> open the file and see the data.
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+
+
+root@docker:/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac
+99b0ef/_data# exit
+exit
+
+subbune590@docker:~/compose$ sudo docker ps 
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS   
+                                NAMES
+bf60c167d07c   nginx:alpine   "/docker-entrypoint.…"   6 minutes ago   Up 6 minutes   0.0.0.0:
+9090->80/tcp, :::9090->80/tcp   nginx_con
+subbune590@docker:~/compose$ sudo docker exec -it nginx_con /bin/bash
+if i go inside container and if i modify the data , same modification we will see in anonymous volume also.
+sudo docker exec -it containername /bin/sh    
+    
+/ # cd /usr/share/nginx/html
+/usr/share/nginx/html # ls -ltr
+total 8
+-rw-r--r--    1 root     root           615 Jan 25 15:26 index.html
+-rw-r--r--    1 root     root           497 Jan 25 15:26 50x.html
+/usr/share/nginx/html # vi index.html 
+/usr/share/nginx/html # touch file1 file2 file3
+/usr/share/nginx/html # ls -ltr
+total 8
+-rw-r--r--    1 root     root           497 Jan 25 15:26 50x.html
+-rw-r--r--    1 root     root           644 Jan 29 01:46 index.html
+-rw-r--r--    1 root     root             0 Jan 29 01:46 file3
+-rw-r--r--    1 root     root             0 Jan 29 01:46 file2
+-rw-r--r--    1 root     root             0 Jan 29 01:46 file1
+/usr/share/nginx/html # 
+/usr/share/nginx/html # ls -ltr
+total 8
+-rw-r--r--    1 root     root           497 Jan 25 15:26 50x.html
+-rw-r--r--    1 root     root           645 Jan 29 01:43 index.html
+-rw-r--r--    1 root     root             0 Jan 29 01:43 file1.txt
+/usr/share/nginx/html # read escape sequence
+subbune590@docker:~/compose$ 
+
+enter ctrl + p + q  --> to comeout from the running container.
+
+subbune590@docker:~/compose$ sudo -su root
+root@docker:~/compose# cd /var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef5
+20b2c18d4bc8ac99b0ef/_data
+root@docker:/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac
+99b0ef/_data# 
+root@docker:/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac
+99b0ef/_data# ls -ltr
+total 8
+-rw-r--r-- 1 root root 497 Jan 25 15:26 50x.html
+-rw-r--r-- 1 root root 644 Jan 29 01:46 index.html
+-rw-r--r-- 1 root root   0 Jan 29 01:46 file3
+-rw-r--r-- 1 root root   0 Jan 29 01:46 file2
+-rw-r--r-- 1 root root   0 Jan 29 01:46 file1
+root@docker:/var/lib/docker/volumes/1a87a60c4b2a914f6787eec129790afa3d54bf7e6ef520b2c18d4bc8ac
+99b0ef/_data#
+
+
+ERROR: Named volume "{'type': 'volume', 'source': 'myd', 'target': '/data', 'volume': {'nocopy
+': True}}" is used in service "web" but no declaration was found in the volumes section.
+
+example:2
+---------------
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysqltest
+    ports:
+      - "3306:3306"
+    env_file: env.txt
+    volumes:
+      - "mysql_volume:/var/lib/mysql"
+volumes:
+  mysql_volume:
+
+example:
+-----------
+docker volume create mysql_volume
+
+example3:
+------------
+version: "3.2"
+services:
+  web:
+    build: dockerfile
+    image: nginx:alpine
+    volumes:
+      - type: volume
+        source: mydata
+        target: /usr/share/nginx/html
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./static
+        target: /opt/app/static
+volumes:
+  mydata:
+----------------------------------
+
+version: '3'
+services:
+  web:
+    container_name: nginx1
+    ports:
+      - "8080:80"
+    volumes:
+      - "vol2:/usr/share/nginx/html"
+    image: nginx
+volumes:
+  vol2:
+
+
+
+
+Network in dockercompose:
+----------------------
+version: '3'
+services:
+  web:
+    image: centos
+    container_name: nginx
+    networks:
+      - test_net
+    tty: true
+  db:
+    image: centos
+    container_name: mysql
+    networks:
+      - test_net
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+    tty: true
+networks:
+  test_net:
+
+docker exec nginx bash -c "ping mysql"
+docker network create test_net
+
+docker exec mysql bash -c "ping nginx"
+
+
+-----------------------------------
+===================================dockdercompose  with build:===============
+
+
+version: '3'
+services:
+  web:
+    image: my_image
+    container_name: test_cont
+    build: .
+
+vi Dockerfile
+FROM nginx
+RUN mkdir /opt/test
+
+docker-compose build 
+
+docker compose will understand the Dockerfile, so no need to specify the dockerfile name in the dockercompose yaml file.
+
+if the Dockerfile name is other than the "Dockerfile" we need to specify externally
+
+version: '3'
+services:
+  web:
+    image: my_image
+    container_name: test_cont
+    build:
+      context: .
+      dockerfile: Dockerfile2
+      
+
+vi Dockerfile2
+FROM nginx
+RUN mkdir /opt/test
+
+
+
+if the Dockerfile name is other than the "Dockerfile" we need to specify externally
+and if the Dockerfile2 is present inside the "build" directory then in the build context we need to specify the directory name...
+
+version: '3'
+services:
+  web:
+    image: my_image
+    container_name: test_cont
+    build:
+      context: build
+      dockerfile: Dockerfile2
+
+vi Dockerfile2
+FROM nginx
+RUN mkdir /opt/test
+
+============================
+
+
+docker-compose logs -f -- >to see the logs
+
+Install wordpress and MYSQL:
+-----------------------------
+https://github.com/ricardoandre97/docker-en-resources
+
+
+
+
+
+version: '3'
+
+services:
+  db:
+    container_name: wp-mysql
+    image: mysql:5.7
+    volumes:
+       - $PWD/data:/var/lib/mysql
+    environment:
+       MYSQL_ROOT_PASSWORD: 12345678
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+    ports:
+      - "3306:3306"
+    networks:
+      - my_net
+
+  wp:
+    container_name: wp-web
+    volumes:
+      - "$PWD/html:/var/www/html"
+    depends_on:
+      - db
+    image: wordpress
+    ports:
+      - "9091:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    networks:
+      - my_net
+networks:
+  my_net:
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------
+2 commits in master
+git checkout -b feature
+
+2 master + 2 feature 
+git checkout to master 
+1 commit 
+
+m3 --> f1--> f2
+
+i want to rebase , make a note of f1 and f2 commit id's and check after reabse in master branch
+f5 40
+
+present in feature branch
+git rebase master (To which branch we need to rebase)
+
+or 
+present in master
+git rebase feature master
+
+
+check the log of the feature commit's 
+after rebase, commit id's of the featuer branch will change.
+
+Git says I want to base these latest changes presnet in featue branch, on the latest commits in the master branch,so in this case instead adding commits on top of m2, it will ad don top of m3.
+git will check the changes made in featuer branch  2 then it wil lalso check changes made in master branch, at the end , i want to put latest commits on top of the latest commits in Master 
+
+Rebasing creates new commit's
+because history is not same, it's re-written.
+we have rebased the feature branch .
+
+
+============================================
+	Networks in Docker
+-----------------------------------------
+we have 4 types of netwroks are there . 
+those are 
+Bridge network
+Host network
+Overlay network
+none network
+Default network is Bridge network.
+till now we didn;t used network tag/option in the docker run --dt coomand(while creating the container)
+
+
+sudo docker run -dit --name con11 centos    here we didn't specifed the network , usign the default network --> bridge
+sudo docker run -dit --name con22 centos
+
+
+Applicaition 
+
+java--> database --> grafan -> redis --> tomcat 
+different containers , these containers will interact each other. 
+
+sudo docker ps
+sudo docker network inspect bridge
+sudo docker container inspect con11
+
+new custome brigde network 
+cut1 --sub 172.19.0.0/16
+cut2-->sub 172.20.0.0/16
+cont1  --. cut1
+cont2 -->cut2
+
+sudo docker exec con1 /bin/bash -c "ping con2"
+
+
+Host networks:
+---------------------
+Host network driver removes the network isolation between the docker host and the docker containers to use the hosts networking directly.
+for instance, if we run a container which binds to port 80 and you use the hsot networking. The containers applciation will be available on port 80 on the host's IP address.
+
+from the offical document:
+--------------------------------------
+f you use the host network mode for a container, that container's network stack isn't isolated from the Docker host (the container shares the host's networking namespace), and the container doesn't get its own IP-address allocated. For instance, if you run a container which binds to port 80 and you use host networking, the container's application is available on port 80 on the host's IP address.
+
+Given that the container does not have its own IP-address when using host mode networking, port-mapping doesn't take effect, and the -p, --publish, -P, and --publish-all option are ignored, producing a warning instead:
+
+Host mode networking can be useful for the following use cases:
+
+To optimize performance
+In situations where a container needs to handle a large range of ports
+This is because it doesn't require network address translation (NAT), and no "userland-proxy" is created for each port.
+
+The host networking driver only works on Linux hosts, and is not supported on Docker Desktop for Mac, Docker Desktop for Windows, or Docker EE for Windows Server.
+
+
+
+sudo docker network ls
+
+sudo docker container run -dt --name myhost --network host ubuntu
+
+will create one more container with bridge network 
+
+sudo docker container run -dt --name mybridge ubuntu
+
+sudo docker ps
+
+sudo docker container exec -it mybridge
+
+apt-get update && apt-get install net-tools -y
+
+ifconfig
+
+we can see that container having it's own etho interface
+
+netstat -ntlp
+
+no services are running on anyof the port
+
+quickly install nginx 
+
+"apt-get install nginx"
+
+if we give 
+netstat -ntlp
+we can see the port is inside the container..
+if we come out from the container and if we give "netstat -ntlp"
+we can't see any service with port 80.
+-p : publish
+
+now go with hostnetwork
+sudo docker container exec -it myhost
+ 
+
+
+
+None network:
+--------------------
+if we want to completely disable the networking stack on  a container, we can use the none network.
+
+This mode will not configure any IP for the container and does not have any access to the external network as well for other containers.
+
+sudo docker container run -dt --name mynone --network none alpine
+
+sudo docker ps
+
+sudo docker container exec -it mynone /bin/bash
+
+ifconfig, there is only loopback interface, 
+so this container can't connect outside the world 
+ping google.com
+
+
+Layers of Image:
+---------------------
+Docker image is built up from a series of layers
+Each layer represent an instruction in the images docker file.
+
+
