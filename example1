@@ -1,0 +1,25 @@
+---
+ - name: debug module demo
+   hosts: localhost
+   gather_facts: yes
+   vars:
+     fruit: "apple"
+   tasks:
+     - name: debug the message
+       ansible.builtin.debug:
+         msg: "hi this is ramesh {{ fruit }}"
+       
+     - name: see the list of files
+       ansible.builtin.command: ls -ltr
+       register: result
+     
+     - name: display the command output
+       ansible.builtin.debug:
+         var: result
+         
+     - name: create a file
+       ansible.builtin.file:
+         path: /tmp/file345.txt
+         state: touch
+         mode: 777
+       when: result.rc == 0
