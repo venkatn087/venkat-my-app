@@ -1,0 +1,3448 @@
+    Roles:   apache httpd
+------------------
+vi httpdex.yml
+---
+- hosts: all
+  tasks:
+  - name: Install the httpd pacakge
+    ansible.builtin.yum:
+      name: httpd
+      state: latest
+  - name: copy httpd configuration files
+    ansible.builtin.copy:
+      src: /tmp/httpd.original
+      dest: /etc/httpd/conf/httpd.conf
+  - name: copy index.html file
+    ansible.builtin.copy:
+      src: /tmp/index.html
+      dest: /var/www/html
+    notify:
+    - restart apache
+  - name: start and enable httpd service
+    ansible.builtin.service:
+      name: httpd
+      state: restarted
+      enabled: yes
+  handlers:
+  - name: restart apache
+    ansible.builtin.service: 
+      name: httpd
+      state: restarted
+
+ansible-galaxy init apache --offline
+'offline' tag stops to downlad a role  with name as 'apache' from ansible-galaxy if the same name role exist.
+
+cd tasks
+vi main.yml
+---
+- import_tasks: install.yml
+- import_tasks: configure.yml
+- import_tasks: service.yml
+
+
+vi install.yml
+---
+- name: install httpd package
+  ansible.builtin.yum:
+    name: httpd
+    state: latest
+
+vi configure.yml
+---
+- name: copy httpd configuration files
+  ansible.builtin.copy:
+    src: files/httpd.original
+    dest: /etc/httpd/conf/httpd.conf
+- name: copy index.html file
+  ansible.builtin.copy:
+    src: files/index.html
+    dest: /var/www/html
+  notify:
+  - restart apache 
+
+vi service.yml
+- name: start and enable httpd service
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+    enabled: yes
+ll
+
+cd ..
+
+cd files
+
+cp -rf /etc/httpd/conf/httpd.conf  httpd.original
+
+vi index.html
+this is home page created by ansible tessting role
+
+esc :wq!
+
+vi httpd.original
+add some comment line to differenctiate at the begining of the line
+
+esc :wq!
+
+cd ..
+
+cd handlers
+vi main.yml
+---
+- name: restart apache
+  ansible.builtin.service: 
+    name: httpd
+    state: restarted
+
+cd ..
+cd meta
+vi main.yml
+author: some name
+description: change the description over here
+
+cd ..
+tree 
+pwd 
+ go to default roles path:
+/etc/ansible
+or 
+$HOME/.ansible/x/x/x/
+
+vi mainrole.yml
+
+---
+- hosts: all
+- roles:
+  - apache
+
+ansible-playbook mainrole.yml --syntax-check
+
+
+
+=======================================end=================
+cd ..
+
+cd 
+
+
+
+
+
+
+
+
+
+
+
+vi ex23.yml
+
+---
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: creating a new group
+      ansible.builtin.group:
+        name: sonarqube
+
+    - name: creating a user
+      ansible.builtin.user:
+        name: testuser2
+        groups:
+          - sonarqube
+        uid: 2000
+        comment: "learning to create a user in ansible"
+        create_home: true
+        home: "/home/example"
+        password: "{{ 'testuser2' | password_hash('sha512') }}"
+
+
+
+vi file1.yml
+
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: create a new empty file
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        state: touch
+
+    - name: Touch the same file, but add/remove some permissions
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        mode: u+rw,g-wx,o-rwx
+   
+    - name: Remove file (delete file)
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        state: absent
+
+==========================================================
+
+
+- name: create a new user
+      ansible.builtin.user:
+        name: foo
+        comment: new user created
+        uid: 1077
+    - name: Change file ownership, group and permissions
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        owner: foo
+        group: foo
+        mode: '0644'
+    - name: create a symbolic link
+      ansible.builtin.file:
+        src: /tmp/foo.file
+        dest: /opt/test.txt
+        owner: foo
+        group: foo
+        state: link
+    - name: Create two hard links
+      ansible.builtin.file:
+        src: '{{ item.src }}'
+dest: '{{ item.dest }}'
+        state: hard
+      loop:
+        - { src: /tmp/blog.txt, dest: /opt/y }
+        - { src: /tmp/blog2.txt, dest: /opt/z }
+    - name: Touch a file, using symbolic modes to set the permissions (equivalent to 0644)
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u=rw,g=r,o=r
+
+    - name: Touch the same file, but add/remove some permissions
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+
+    - name: Touch again the same file, but do not change times this makes the task idempotent
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+        modification_time: preserve
+        access_time: preserve
+
+    - name: Create a directory
+      ansible.builtin.file:
+        path: /etc/dir123
+        state: directory
+        mode: '0755'
+    - name: create a directory
+      ansible.builtin.file:
+        path: /etc/foo
+        state: directory
+        owner: foo
+        group: foo
+
+    - name: Update modification and access time of given file
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: file
+        modification_time: now
+        access_time: now
+
+    
+
+
+
+
+
+
+
+
+
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: create a new file for soft link
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        state: touch
+    - name: create a new file for hard link
+      ansible.builtin.file:
+        path: /tmp/blog.txt
+        state: touch
+    - name: create a new file for hard link2
+      ansible.builtin.file:
+        path: /tmp/blog2.txt
+        state: touch
+    - name: create a new file
+      ansible.builtin.file:
+        path: /tmp/f123.txt
+        state: touch
+- name: create a new user
+      ansible.builtin.user:
+        name: foo
+        comment: new user created
+        uid: 1077
+    - name: Change file ownership, group and permissions
+      ansible.builtin.file:
+        path: /tmp/foo.file
+        owner: foo
+        group: foo
+        mode: '0644'
+    - name: create a symbolic link
+      ansible.builtin.file:
+        src: /tmp/foo.file
+        dest: /opt/test.txt
+        owner: foo
+        group: foo
+        state: link
+    - name: Create two hard links
+      ansible.builtin.file:
+        src: '{{ item.src }}'
+dest: '{{ item.dest }}'
+        state: hard
+      loop:
+        - { src: /tmp/blog.txt, dest: /opt/y }
+        - { src: /tmp/blog2.txt, dest: /opt/z }
+    - name: Touch a file, using symbolic modes to set the permissions (equivalent to 0644)
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u=rw,g=r,o=r
+
+    - name: Touch the same file, but add/remove some permissions
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+
+    - name: Touch again the same file, but do not change times this makes the task idempotent
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+        modification_time: preserve
+        access_time: preserve
+
+    - name: Create a directory
+      ansible.builtin.file:
+        path: /etc/dir123
+        state: directory
+        mode: '0755'
+    - name: create a directory
+      ansible.builtin.file:
+        path: /etc/foo
+        state: directory
+        owner: foo
+        group: foo
+
+    - name: Update modification and access time of given file
+      ansible.builtin.file:
+        path: /etc/foo.conf
+        state: file
+        modification_time: now
+        access_time: now
+
+    - name: Recursively change ownership of a directory
+      ansible.builtin.file:
+        path: /etc/foo
+        state: directory
+        recurse: yes
+        owner: foo
+        group: foo
+
+    - name: Remove file (delete file)
+      ansible.builtin.file:
+        path: /tmp/foo123.txt
+        state: absent
+
+    - name: Recursively remove directory
+      ansible.builtin.file:
+        path: /etc/foo
+        state: absent
+
+
+---------------------------------register in ansible----------
+The most important properties of each of the register variables are as follows:
+
+cmd – The command that ran to generate the output.
+
+stdout – The output of the command.
+
+stderr – The error output of the command.
+
+start – The date and time when the command began executing.
+
+end – The date and time when the command finished executing.
+
+delta – The time taken to run the command. This is the difference between the end and the start properties.
+
+stdout_lines – An array containing each output line of the command. Same as stdout, but stdout separates the lines using a newline (\n) characters instead of arrays
+
+
+stderr_lines –  An array containing each error output line of the command. Same as stderr, but stderr separates the lines using newlines (\n) characters instead of arrays.
+
+If you just want to print/access the password string (which is very likely), you may print/access the stdout property of the mypass variable in your playbook, as marked in the screenshot below.
+
+
+- hosts: ubuntu20
+  user: ansible
+  become: True
+  gather_facts: true
+  tasks:
+    - name: display the content
+      shell: echo "hello"
+      register: mypass
+    - name: Print the generated password
+      debug:
+      msg: "The password is {{ mypass }}"
+    - name: store the output into a file
+      copy:
+        content: "{{ mypass.stdout }}"
+        dest: /tmp/file1_apply_patch
+     when mypass.stdout == 'Patches available"
+    
+   - name: store the output into a file
+      copy:
+        content: "{{ mypass.stdout }}"
+        dest: /tmp/file1_Not_available
+     when mypass.stdout == 'Upto date"
+
+  - name: unknow errors
+      copy:
+        content: "{{ mypass.stdout }}"
+        dest: /tmp/file1_Not_available
+     when mypass.stdout != 'Upto date" or mypass.stdout != 'Patches available"
+
+when: (ansible_facts['os_family'] == "Windows") and
+(ansible_facts['reboot_pending'] == "yes")
+
+when:
+- ansible_facts['os_family'] == "Windows"
+- ansible_facts['reboot_pending'] == "yes"
+
+
+  
+
+
+
+
+    
+
+-----------How to take teh backup of a directory in ansible---
+- hosts: all
+  user: ansible
+  become: True
+  tasks:
+    - name: Get home directory /home/ansible contents
+      shell: ls /home/ansible
+      register: dir_contents
+    - name: Create a new directory /tmp/ansible
+      file:
+        path: /tmp/ansible
+        state: directory
+    - name: Backup home directory /home/ansible to /tmp/ansible
+      copy:
+        src: /home/ansible/{{ item }}
+        dest: /tmp/ansible/
+        remote_src: True
+      loop: "{{ dir_contents.stdout_lines }}
+
+------------------------------------------------------------------
+
+
+
+  File module in linux:
+-------------------------------------
+ ex1: create an empty file:
+
+---
+- hosts: all
+  become: true
+  vars:
+    myfile: "~/example.txt"
+  tasks:
+    - name: create a new file for soft link
+      ansible.builtin.file:
+        path: "{{ myfile }}"
+        state: touch
+
+
+
+How to create a directory using "file" module:
+--------------------------------------------------
+---
+- name: file module demo
+  hosts: all
+  vars:
+    mydir: "~/example"
+  tasks:
+    - name: Creating a directory
+      ansible.builtin.file:
+        path: "{{ mydir }}"
+        state: directory
+        owner: devops
+        group: users
+        mode: '0644'
+
+
+
+create a text file with content:
+--------------------------------------
+
+---
+- name: copy module demo
+  hosts: all
+  vars:
+    myfile: "~/example.txt"
+  tasks:
+    - name: create a simple text file
+      ansible.builtin.copy:
+        dest: "{{ myfile }}"
+        content: |
+          line 1
+          line 2
+          etc.
+
+
+
+check if the file exists or not by using "stat" module.:
+--------------------------------------
+---
+- name: check if a file exist
+  hosts: all
+  become: false
+  vars:
+    myfile: /home/devops/test.txt
+  tasks:
+    - name: check if a file exists
+      ansible.builtin.stat:
+        path: "{{ myfile }}"
+      register: file_data
+
+    - name: report file exists
+      ansible.builtin.debug:
+        msg: "The file {{ myfile }} exist"
+      when: file_data.stat.exists
+
+    - name: report file not exists
+      ansible.builtin.debug:
+        msg: "The file {{ myfile }} doesn't exist"
+      when: not file_data.stat.exists
+
+
+------------------------------------------------------
+  check directory exists or not using "stat" module
+---------------------------------------------------
+---
+- name: check if the directory exists
+  hosts: all
+  become: false
+  vars:
+    directory: "/tmp"
+
+  tasks:
+    - name: Check if the directory exists
+      ansible.builtin.stat:
+        path: "{{ directory }}"
+      register: dir_to_check
+
+    - name: Directory found
+      ansible.builtin.debug:
+        msg: "Directory {{ directory }} present"
+      when: dir_to_check.stat.isdir is defined and dir_to_check.stat.isdir
+
+
+
+ansible-playbook -e 'directory=/var' example1.yml --> if we want to override the directory.
+
+
+==========================================Rename the file/directory=================
+---
+- name: rename file or directory
+  hosts: all
+  vars:
+    mysrc: "~/foo"
+    mydst: "~/bar"
+  tasks:
+    - name: Check if file exists
+      ansible.builtin.stat:
+        path: "{{ mysrc }}"
+      register: check_file_name
+
+    - name: print debug
+      ansible.builtin.debug:
+        var: check_file_name             // to display the value of the variable.
+
+    - name: Copy file with new name
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ mysrc }}"
+        dest: "{{ mydst }}"
+      when: check_file_name.stat.exists
+
+    - name: Remove old file
+      ansible.builtin.file:
+        path: "{{ mysrc }}"
+        state: absent
+      when: check_file_name.stat.exists
+
+=================change the permission of a file/directory===========================
+
+---
+- name: file module demo
+  hosts: all
+  vars:
+    myfile: "/home/devops/test.txt"
+  become: false
+  tasks:
+    - name: check permission
+      ansible.builtin.file:
+        path: "{{ myfile }}"
+        owner: "devops"
+        group: "users"
+        mode: '0777'
+
+
+=================================how to give the execute permission ===============
+
+---
+- name: file module demo
+  hosts: all
+  vars:
+    myscript: "~/example.sh"
+  tasks:
+    - name: set the execute permission
+      ansible.builtin.file:
+        dest: "{{ myscript }}"
+        mode: 'a+x'
+
+
+--------------delete a file or directory----------------------
+---
+- name: file module demo
+  hosts: all
+  vars:
+    mypath: "/home/devops/deleteme"
+  become: false
+  tasks:
+    - name: "{{ mypath }} not present"
+      ansible.builtin.file:
+        path: "{{ mypath }}"
+        state: "absent"
+
+------------------create a symbolic link-----------------------------------------------
+
+Hard Link :
+A hard link acts as a copy (mirrored) of the selected file. It accesses the data available in the original file.
+If the earlier selected file is deleted, the hard link to the file will still contain the data of that file.
+
+Soft Link :
+A soft link (also known as Symbolic link) acts as a pointer or a reference to the file name. It does not access the data available in the original file. If the earlier file is deleted, the soft link will be pointing to a file that does not exist anymore.
+
+
+hardlink:
+---------
+
+Files that are hard linked
+take the same inode number.
+
+Hard links are not
+allowed for directories.
+(Only a superuser* can do it)
+
+
+It cannot be used
+across file systems.
+
+Data present in the original
+file will still be available
+in the hard links.
+
+
+If the original file is removed, the link
+will still work as it accesses the data the
+original was having access to.
+
+
+Hard links are comparatively faster.
+
+Softlink:
+------------------
+Files that are soft linked
+take a different inode number.
+
+Soft links can be used for
+linking directories.
+
+It can be used
+across file systems.
+
+Soft links only point to the
+file name, it does not retain
+data of the file.
+
+If the original file is removed, the link
+will not work as it doesn’t access the
+original file’s data.
+
+
+Soft links are comparatively slower.
+
+
+Note:
+
+Inode number – Index node number is a unique number assigned to all files in a Linux/Unix system.
+Superuser – A superuser has more rights compared to an ordinary user. They can change file ownership and set permissions.
+
+
+flow:
+hardlink ---> inode <---file.txt <----soft link
+
+
+
+to know the inode of a file:
+-----------------------------------
+$ ls -li filename
+$ ls -li /etc/resolv.conf
+
+You can also use the stat command as follows:
+$ stat fileName-Here
+$ stat /etc/passwd
+
+
+to create a soft link:
+ln -s /etc/file1.txt    f1   
+     source file       softlink file
+
+hardlink
+ln /etc/file1.txt f2
+
+
+
+
+---
+- name: file module demo
+  hosts: all
+  vars:
+    mylink: "~/example"
+    mysrc: "/proc/cpuinfo"
+  tasks:
+    - name: Creating a symlink
+      ansible.builtin.file:
+        src: "{{ mysrc }}"
+        dest: "{{ mylink }}"
+        state: link
+
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: create a new file for soft link
+      ansible.builtin.file:
+        path: /opt/testone
+        state: directory
+
+- name: create a symbolic link
+      ansible.builtin.file:
+        src: /opt/testone
+        dest: /opt/test
+
+
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: check if the directory exists or not
+      ansible.builtin.file:
+        src: "/etc/dir123"
+        dest: "~/example4"
+        state: link
+        force: yes
+
+
+this is working
+
+---------------------hardlink-----------
+---
+- name: file module demo
+  hosts: all
+  vars:
+    mylink: "~/link"
+    myfile: "~/example.txt"
+  tasks:
+    - name: Creating hardlink
+      ansible.builtin.file:
+        src: "{{ myfile }}"
+        dest: "{{ mylink }}"
+        state: hard
+
+
+---
+- name: file module demo
+  hosts: all
+  vars:
+    mylink: "~/example"
+    mysrc: "/proc/cpuinfo"
+  tasks:
+    - name: Creating a symlink
+      ansible.builtin.file:
+        src: "{{ mysrc }}"
+        dest: "{{ mylink }}"
+        state: link
+
+
+------------------get_url to download a file-----------------
+checksum:
+If a checksum is passed to this parameter, the digest of the destination file will be calculated after it is downloaded to ensure its integrity and verify that the transfer completed successfully. Format: <algorithm>:<checksum>, e.g.: checksum="sha256:D98291AC[...]B6DC7B97" If you worry about portability, only the sha1 algorithm is available on all platforms and python versions. The third party hashlib library can be installed for access to additional algorithms. Additionally, if a checksum is passed to this parameter, and the file exist under the dest location, the destination_checksum would be calculated, and if checksum equals destination_checksum, the file download would be skipped (unless force is true).
+
+url_password: The password for use in HTTP basic authentication. If the url_username parameter is not specified, the url_password parameter will not be used.
+url_username:The username for use in HTTP basic authentication. This parameter can be used without url_password for sites that allow empty passwords
+
+
+---
+- name: get_url module demo
+  hosts: all
+  become: false
+  vars:
+    myurl: "https://releases.ansible.com/ansible/ansible-2.9.25.tar.gz"
+    mycrc: "sha256:https://releases.ansible.com/ansible/ansible-2.9.25.tar.gz.sha"
+    mydest: "/home/devops"
+  tasks:
+
+    - name: download file
+      ansible.builtin.get_url:
+        url: "{{ myurl }}"
+        dest: "{{ mydest }}"
+        checksum: "{{ mycrc }}"
+        mode: '0644'
+        owner: devops
+        group: wheel
+        timeout: 10
+
+-----------------------------unarchive ------------------------------------
+---
+- name: unarchive module demo
+  hosts: all
+  become: false
+  vars:
+    myurl: "https://github.com/lucab85/ansible-pilot/archive/refs/heads/master.zip"
+  tasks:
+    - name: extractor presents
+      ansible.builtin.yum:
+        name:
+          - unzip
+          - tar
+        state: present
+      become: true
+
+    - name: extract archive
+      ansible.builtin.unarchive:
+        src: "{{ myurl }}"
+        dest: "/home/devops/"
+        remote_src: true
+        validate_certs: true
+-----------------------------Fail module in ansible---------------
+This module fails the progress with a custom message.
+
+It can be useful for bailing out when a certain condition is met using when.
+
+This module is also supported for Windows targets.
+
+[ansible@ip-172-31-38-107 ~]$ cat fail.yml
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name: set command details
+      ansible.builtin.set_fact:
+        test_cmd: "hostname -f"
+
+    - name: run the command
+      ansible.builtin.command: "{{ test_cmd }}"
+      register: out
+    - name: fail the message
+      ansible.builtin.fail:
+        msg: "failed -invalid machine name"
+      when: "{{ not 'mymachine' in out.stdout }}"
+
+    - name: Print the message
+      debug:
+        msg: "{{ out.stdout }}"
+
+[ansible@ip-172-31-38-107 ~]$
+
+
+-----------------------Not fail --------------------
+[ansible@ip-172-31-38-107 ~]$ cat notfail.yml
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name: set command details
+      ansible.builtin.set_fact:
+        test_cmd: "hostname -f"
+
+    - name: run the command
+      ansible.builtin.command: "{{ test_cmd }}"
+      register: out
+    - name: fail the message
+      ansible.builtin.fail:
+        msg: "failed -invalid machine name"
+      when: "{{ 'mymachine' in out.stdout }}"
+
+    - name: Print the message
+      debug:
+        msg: "{{ out.stdout }}"
+
+[ansible@ip-172-31-38-107 ~]$
+
+--------------------------------------------
+
+
+
+====================================pacakge module -------------
+name   : string / required
+---------------------------
+Package name, or package specifier with version.
+Syntax varies with package manager. For example name-1.0 or name=1.0.
+Package names also vary with package manager; this module will not “translate” them per distro. For example libyaml-dev, libyaml-devel.
+
+state:string / required
+--------------------------
+Whether to install (present), or remove (absent) a package.
+You can use other states like latest ONLY if they are supported by the underlying package module(s) executed.
+
+use:string
+-------------------------
+The required package manager module to use (yum, apt, and so on). The default ‘auto’ will use existing facts or try to autodetect it.
+You should only use this field if the automatic selection is not working for some reason.
+Default: "auto"
+
+[ansible@ip-172-31-38-107 ~]$ cat package.yml
+---
+- name: check if a file exist
+  hosts: all
+  become: true
+  tasks:
+    - name: Install figlet
+      ansible.builtin.package:
+        name: httpd
+        state: present 
+[ansible@ip-172-31-38-107 ~]$
+
+if it is already exist, remove and install again.
+
+
+----------------------------------
+
+=======================YUM================
+Add or remove YUM repositories in RPM-based Linux distributions.
+
+- name: Install the latest version of Apache
+  ansible.builtin.yum:
+    name: httpd
+    state: latest
+
+- name: Install Apache >= 2.4
+  ansible.builtin.yum:
+    name: httpd>=2.4
+    state: present
+
+- name: Install a list of packages (suitable replacement for 2.11 loop deprecation warning)
+  ansible.builtin.yum:
+    name:
+      - nginx
+      - postgresql
+      - postgresql-server
+    state: present
+
+- name: Install a list of packages with a list variable
+  ansible.builtin.yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - httpd
+    - httpd-tools
+
+- name: Remove the Apache package
+  ansible.builtin.yum:
+    name: httpd
+    state: absent
+
+- name: Install the latest version of Apache from the testing repo
+  ansible.builtin.yum:
+    name: httpd
+    enablerepo: testing
+    state: present
+
+- name: Install one specific version of Apache
+  ansible.builtin.yum:
+    name: httpd-2.2.29-1.4.amzn1
+    state: present
+
+- name: Upgrade all packages
+  ansible.builtin.yum:
+    name: '*'
+    state: latest
+
+- name: Upgrade all packages, excluding kernel & foo related packages
+  ansible.builtin.yum:
+    name: '*'
+    state: latest
+    exclude: kernel*,foo*
+
+- name: Install the nginx rpm from a remote repo
+  ansible.builtin.yum:
+    name: http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+    state: present
+
+- name: Install nginx rpm from a local file
+  ansible.builtin.yum:
+    name: /usr/local/src/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+    state: present
+
+- name: Install the 'Development tools' package group
+  ansible.builtin.yum:
+    name: "@Development tools"
+    state: present
+
+- name: Install the 'Gnome desktop' environment group
+  ansible.builtin.yum:
+    name: "@^gnome-desktop-environment"
+    state: present
+
+- name: List ansible packages and register result to print with debug later
+  ansible.builtin.yum:
+    list: ansible
+  register: result
+
+- name: Install package with multiple repos enabled
+  ansible.builtin.yum:
+    name: sos
+    enablerepo: "epel,ol7_latest"
+
+- name: Install package with multiple repos disabled
+  ansible.builtin.yum:
+    name: sos
+    disablerepo: "epel,ol7_latest"
+
+- name: Download the nginx package but do not install it
+  ansible.builtin.yum:
+    name:
+      - nginx
+    state: latest
+    download_only: true
+
+========================================fail module==============
+
+[ansible@ip-172-31-38-107 ~]$ cat fail.yml
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name: set command details
+      ansible.builtin.set_fact:
+        test_cmd: "hostname -f"
+
+    - name: run the command
+      ansible.builtin.command: "{{ test_cmd }}"
+      register: out
+    - name: fail the message
+      ansible.builtin.fail:
+        msg: "failed -invalid machine name"
+      when: "{{ not 'mymachine' in out.stdout }}"
+
+    - name: Print the message
+      debug:
+        msg: "{{ out.stdout }}"
+
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+Backup with rsync module:
+----------------------------------
+synchronize is a wrapper around rsync to make common tasks in your playbooks quick and easy.
+
+src
+dest
+archive
+rsync_opts
+
+---
+- name: synchronize module demo
+  hosts: all
+  become: false
+  vars:
+    source: 'examples'
+    destination: 'examples-backup'
+  tasks:
+    - name: rsync installed
+      ansible.builtin.package:
+        name: rsync
+        state: present
+      become: true
+    - name: data synchronization
+      ansible.posix.synchronize:
+        src: '{{ source }}'
+        dest: '{{ destination }}'
+
+create a directoy called examples:
+file1.txt
+file2.txt
+
+obesever the data of the file , it will be same 
+
+after playbook execution , create a new file like touch f1.txt.
+
+
+
+- name: Synchronization of src on the control machine to dest on the remote hosts
+  ansible.posix.synchronize:
+    src: some/relative/path
+    dest: /some/absolute/path
+
+- name: Synchronization using rsync protocol (push)
+  ansible.posix.synchronize:
+    src: some/relative/path/
+    dest: rsync://somehost.com/path/
+
+- name: Synchronization using rsync protocol (pull)
+  ansible.posix.synchronize:
+    mode: pull
+    src: rsync://somehost.com/path/
+    dest: /some/absolute/path/
+
+
+
+-----------------how to find a files using "find" module.----------
+---
+- name: find demo
+  hosts: all
+  vars:
+    mypath: "/home/devops/example"
+  tasks:
+    - name: search files
+      ansible.builtin.find:
+        paths: "{{ mypath }}"
+        hidden: true
+        recurse: true
+        file_type: any
+        patterns: '*.cnf'
+      register: found_files
+
+    - name: print files
+      ansible.builtin.debug:
+        var: found_files
+
+
+---------how to search for a string in a file using "lineinfile" module------------
+---
+- name: search demo
+  hosts: all
+  vars:
+    myfile: "/etc/ssh/sshd_config"
+    myline: 'PasswordAuthentication no'
+  become: true
+  tasks:
+    - name: string found
+      ansible.builtin.lineinfile:
+        name: "{{ myfile }}"
+        line: "{{ myline }}"
+        state: present
+      check_mode: true
+      register: conf
+      failed_when: (conf is changed) or (conf is failed)
+
+
+--------------how to delete only files inside the directory---------------------
+
+---
+- name: delete file(s) in dir demo
+  hosts: all
+  vars:
+    mypath: "/home/devops/example"
+  tasks:
+    - name: collect files
+      ansible.builtin.find:
+        paths: "{{ mypath }}"
+        hidden: true
+        recurse: true
+        file_type: any
+      register: collected_files
+
+    - name: remove collected files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ collected_files }}"
+ 
+
+
+
+
+------------------------------------------
+How to edit the single-line text :
+----------------------------------
+lineinfile
+ansible.builtin.lineinfile
+
+insert/update/remove a single line of text in a file.
+
+---
+- name: lineinfile module demo
+  hosts: all
+  become: true
+  tasks:
+    - name: allow password authentication
+      ansible.builtin.lineinfile:
+        state: present
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication yes"
+        validate: 'sshd -t -f %s'
+
+=========================blockinfile====================
+insert/update/remove a block of multi-line text surrounded by customizable marker lines.
+
+---
+- name: blockinfile module demo
+  hosts: all
+  become: true
+  tasks:
+
+  - name: Generate /etc/hosts file
+    ansible.builtin.blockinfile:
+      state: present
+      dest: /etc/hosts
+      content: |
+        192.168.0.200 demo demo.example.com
+=============================ping====================
+test the host availability :
+
+---
+- name: ping module demo
+  hosts: all
+  become: false
+
+  tasks:
+    - name: test connection
+      ansible.builtin.ping:
+
+=======================Reboot====================
+how to reboot the system?
+---
+- name: reboot module demo
+  hosts: all
+  become: true
+  tasks:
+    - name: reboot host(s)
+      ansible.builtin.reboot:
+        msg: "reboot by Ansible"
+        pre_reboot_delay: 5
+        post_reboot_delay: 10
+        test_command: "whoami"
+
+========================git checkout==================================
+---
+- name: git module demo
+  hosts: all
+  vars:
+    repo: "git@github.com:lucab85/ansible-pilot.git"
+    dest: "/home/devops/ansible-pilot"
+    sshkey: "~/.ssh/id_rsa"
+  tasks:
+    - name: ensure git pkg installed
+      ansible.builtin.yum:
+        name: git
+        state: present
+        update_cache: true
+      become: true
+
+    - name: checkout git repo
+      ansible.builtin.git:
+        repo: "{{ repo }}"
+        dest: "{{ dest }}"
+        key_file: "{{ sshkey }}"
+
+-----------------------------------------------------
+     checkout repoitory with the help of https:
+------------------------------------------------------
+---
+- name: git module demo
+  hosts: all
+  becomes: true
+  tasks:
+    - name: ensure git pkg installed
+      ansible.builtin.yum:
+        name: git
+        state: present
+      become: true
+
+    - name: checkout git repo
+      ansible.builtin.git:
+        repo: https://github.com/lucab85/ansible-pilot.git
+        dest: /home/devops/ansible-pilot
+
+------------fetch -----------------------
+  copy files from remote-hosts to local 
+-----------------------------------------
+- name: fetch module demo
+  hosts: all
+  become: false
+  vars:
+    log_file: "/var/log/messages"
+    dump_dir: "logs"
+  tasks:
+    - name: fetch log
+      ansible.builtin.fetch:
+        src: "{{ log_file }}"
+        dest: "{{ dump_dir }}"
+
+----------------------------------------------------
+  copy files from local to remote-hosts using copy.
+-------------------------------------------------------
+---
+- name: copy module demo
+  hosts: all
+  become: false
+  tasks:
+    - name: copy report.txt
+      ansible.builtin.copy:
+        src: report.txt
+        dest: /home/devops/report.txt
+        owner: devops
+        mode: '0644'
+------------------------------------------------------------
+    How to copy the multiple files 
+----------------------------------------------------------------
+---
+- name: copy multiple files
+  hosts: all
+  becomes: false
+  tasks:
+    - name: copy multiple files
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "/home/devops"
+        owner: devops
+        mode: '0644'
+      with_fileglob:
+        - "examples/*.txt"
+---------------------------------------------------
+  start and enable services on boot on remote hosts:
+-----------------------------------------------------
+service_facts:
+
+Return service state information as fact data:
+
+ansible.builtin.service
+
+manage services
+
+
+-----------ex1:
+[ansible@ip-172-31-38-107 ~]$ cat service_facts.yml
+---
+- hosts: localhost
+  become: true
+  tasks:
+  - name: Populate service facts
+    ansible.builtin.service_facts:
+
+  - name: Print service facts
+    ansible.builtin.debug:
+      var: ansible_facts.services
+[ansible@ip-172-31-38-107 ~]$
+
+ex2:
+---
+- name: service module demo
+  hosts: all
+  become: true
+  vars:
+    services_on_boot:
+      - "chronyd.service"
+  tasks:
+    - name: populate service facts
+      ansible.builtin.service_facts:
+    - name: enable services on boot
+      ansible.builtin.service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      when: "item in services"
+      with_items: '{{ services_on_boot }}'
+ 
+rpm -qa | grep chrony
+systemctl status chronyd.service
+
+------------------------------------------------------------
+ansible stop and disable services on boot on remote hosts
+-------------------------------------------------------------
+ansible.buitlin.service_facts
+Return service information as fact data
+ansible.builtin.service
+manage services
+
+---
+- name: service module demo
+  hosts: all
+  become: true
+  vars:
+    disable_services:
+      - "chronyd.service"
+  tasks:
+    - name: populate service facts
+      ansible.builtin.service_facts:
+
+    - name: disable services
+      ansible.builtin.service:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      when: "item in services"
+      with_items: '{{ disable_services }}'
+
+rpm -qa | grep chrony
+systemctl status chronyd.service
+actively running
+after above playbook , it will be stopped
+
+
+
+-------loops-----------------------
+
+with_items:
+
+[ansible@ip-172-31-38-107 ~]$ cat with_items.yml
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: loop through list
+      ansible.builtin.debug:
+        msg: "An item: {{ item }}"
+      with_items:
+        - 1
+        - 2
+        - 3
+[ansible@ip-172-31-38-107 ~]$
+
+loops:
+-=-----------------------
+[ansible@ip-172-31-38-107 ~]$ cat with_items2.yml
+---
+- hosts: all
+  become: yes
+  tasks:
+  # group file name is /etc/group
+  - name: creating a new group
+    ansible.builtin.group:
+      name: wheel
+      state: present
+
+  # users file name is /etc/passwd
+  - name: adding users into the group
+    ansible.builtin.user:
+      name: "{{ item }}"
+      state: present
+      groups: "wheel"
+    with_items:
+      - testuser1
+      - testuser2
+      - testuser3
+      - testuser4
+
+
+with dictionary:
+--------------------------
+we can loop through the elements of a hash using with_dict like this:
+[ansible@ip-172-31-38-107 ~]$ cat with_item3.yml
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: creating a group
+      ansible.builtin.group:
+        name: roo_wheel
+        state: present
+
+    - name: add several users
+      ansible.builtin.user:
+        name: "{{ item.A}}"
+        state: present
+        groups: "{{ item.B }}"
+      with_items:
+        - { A: 'hello1', B: 'wheel' }
+        - { A: 'hello2', B: 'root' }
+        - { A: 'hello3', B: 'roo_wheel' }
+        - { A: 'hello4', B: 'root' }
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+
+
+  users:
+      alice:
+        name: Alice Appleworth
+        telephone: 123-456-7890
+      bob:
+        name: Bob Bananarama
+        telephone: 987-654-3210
+
+---------------with_files---------------
+with_file iterates over the content of a list of files, item will be set to the content of each file in sequence. It can be used like this:
+
+[ansible@ip-172-31-38-107 ~]$ cat with_items5.yml
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: display the file content
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      with_file:
+        - users_file
+        - groups_file
+
+
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: add several users
+      ansible.builtin.user:
+        name: "{{ item.A}}"
+        state: present
+        groups: "{{ item.B }}"
+      with_file:
+        - { A: users_file, B: groups_file }
+
+
+
+vi users_file
+hello21
+hello22
+hello23
+vi groups_file
+wheel
+root
+roo_wheel
+
+
+------------------with_fileglob-------------
+
+with_fileglob matches all files in a single directory, non-recursively, that match a pattern. It calls Python’s glob library, and can be used like this:
+
+
+---
+- hosts: all
+  become: yes
+  tasks:  
+    # first ensure our target directory exists
+    - name: Ensure target directory exists
+      ansible.builtin.file:
+        dest: "/etc/fooapp"
+        state: directory
+
+    # copy each file over that matches the given pattern
+    - name: Copy each file over that matches the given pattern
+      ansible.builtin.copy:
+        src: "{{ item }}"   /tmp/testfile/f1, /tmp/testfile/f2, etcc
+        dest: "/etc/fooapp/"
+        owner: "root"
+        mode: 600
+      with_fileglob:
+        - "/tmp/testfile/*"
+
+
+first create  a directory inside /tmp
+
+cd /tmp
+mkdir testfile
+cd testfile
+touch f1 f2 f3 f4 f5
+after playbook execution, see files copyied or not in "/etc/fooapp"
+
+
+
+
+
+And you want the set of ‘(a, 1)’ and ‘(b, 2)’ and so on. Use ‘with_together’ to get this:
+Looping over Parallel Sets of Data:
+
+[ansible@ip-172-31-38-107 ~]$ cat with_items8.yml
+---
+- hosts: all
+  become: yes
+  vars:
+    alpha: [ 'a', 'b', 'c', 'd' ]
+    numbers:  [ 1, 2, 3, 4 ]
+  tasks:
+    - name: display the values
+      ansible.builtin.debug:
+        msg: "{{ item.0 }} and {{ item.1 }}"
+      with_together:
+        - "{{ alpha }}"
+        - "{{ numbers }}"
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+
+Lineinfile example:
+---------------------
+first create a file in /tmp  with name as "f1.txt"
+[ansible@ip-172-31-38-107 tmp]$ cat f1.txt
+hello
+wheel
+chennai
+mango
+how are you doing
+[ansible@ip-172-31-38-107 tmp]$
+
+
+[ansible@ip-172-31-38-107 ~]$ cat linein_file.yml
+---
+- hosts: localhost
+  become: yes
+  tasks:
+  - name: inserting a line
+    ansible.builtin.lineinfile:
+      path: /tmp/f1.txt
+      state: absent
+      regexp: '^wheel'
+[ansible@ip-172-31-38-107 ~]$
+
+now go and see the output: 
+cd /tmp
+cat f1.txt
+
+[ansible@ip-172-31-38-107 tmp]$ cat f1.txt
+hello
+chennai
+mango
+how are you doing
+[ansible@ip-172-31-38-107 tmp]$
+
+'wheel' line has been removed.
+
+
+ex2:
+
+
+[ansible@ip-172-31-38-107 ~]$ cat linein_file2.yml
+---
+- hosts: localhost
+  become: yes
+  tasks:
+  - name: Ensure SELinux is set to enforcing mode
+    ansible.builtin.lineinfile:
+      path: /tmp/f1.txt
+      regexp: '^mango'
+      line: mango=enforcing
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+now see the output:
+
+[ansible@ip-172-31-38-107 ~]$ cat /tmp/f1.txt
+hello
+chennai
+mango=enforcing
+how are you doing
+
+
+    ------blockinfile:--------------
+---------------------------------------
+
+[ansible@ip-172-31-38-107 ~]$ cat /tmp/f1.txt
+hello
+chennai
+mango=enforcing
+how are you doing
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+[ansible@ip-172-31-38-107 ~]$ cat blockinfile.yml
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: add the lines
+      ansible.builtin.blockinfile:
+        path: /tmp/f1.txt
+        block: |
+           Match User ansible-agent
+           PasswordAuthentication no
+
+
+[ansible@ip-172-31-38-107 ~]$
+
+
+[ansible@ip-172-31-38-107 ~]$ cat /tmp/f1.txt
+hello
+chennai
+mango=enforcing
+how are you doing
+# BEGIN ANSIBLE MANAGED BLOCK
+Match User ansible-agent
+PasswordAuthentication no
+# END ANSIBLE MANAGED BLOCK
+
+
+
+
+EX2:
+
+
+by default content will be inserted at teh bottom of the file.
+
+
+if we want to insert after the perticular line.
+
+[ansible@ip-172-31-38-107 ~]$ cat /tmp/f1.txt
+hello
+chennai
+mango=enforcing
+how are you doing
+
+
+[ansible@ip-172-31-38-107 ~]$ cat blockinfile.yml
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: add the lines
+      ansible.builtin.blockinfile:
+        path: /tmp/f1.txt
+        insertafter: "^chennai"
+        block: |
+           Match User ansible-agent
+           PasswordAuthentication no
+
+
+[ansible@ip-172-31-38-107 ~]$
+
+
+[ansible@ip-172-31-38-107 ~]$ cat /tmp/f1.txt
+hello
+chennai
+# BEGIN ANSIBLE MANAGED BLOCK
+Match User ansible-agent
+PasswordAuthentication no
+# END ANSIBLE MANAGED BLOCK
+mango=enforcing
+how are you doing
+[ansible@ip-172-31-38-107 ~]$
+
+  --------------------template module:-----------------
+
+vi template.yml
+
+---
+- name: template module demo
+  hosts: all
+  become: true
+  vars:
+    page_title: "Placeholder"
+    page_description: |
+      This is my placeholder page example.
+      Multiline is possible ;-)
+  tasks:
+    - name: install Nginx
+      ansible.builtin.yum:
+        name: nginx
+        state: latest
+
+    - name: apply page template
+      ansible.builtin.template:
+        src: templates/placeholder.html.j2
+        dest: /var/www/html/index.html
+
+
+
+mkdir templates
+
+vi placeholder.html.j2
+
+[ansible@ip-172-31-38-107 ~]$ cat placeholder.html.j2
+<html>
+<head>
+  <title>{{ page_title }}</title>
+</head>
+<body>
+    <h1>{{ page_title }}</h1>
+    <p>{{ page_description }}</p>
+</body>
+</html>
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+now go and see the content of /var/www/html/index.html 
+
+cat /var/www/html/index.html
+
+  lookup environment varialbe.
+-------------------------------------
+
+---
+- name: environment demo
+  hosts: all
+  tasks:
+    - name: display HOME
+      ansible.builtin.debug:
+        msg: "{{ lookup('env', 'HOME') }}"
+
+
+printenv
+
+
+---
+- name: set environment demo
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    os_environment:
+      - key: EDITOR    
+        value: vi     
+      - key: MY_ENV_VARIABLE  
+        value: ansiblepilot
+
+  tasks:
+    - name: customize /etc/environment
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      with_items: "{{ os_environment }}"
+
+
+
+ 
+--------------------crontab-------------------------------
+[ansible@ip-172-31-38-107 ~]$ sudo crontab -l
+no crontab for ansible
+[ansible@ip-172-31-38-107 ~]$
+
+
+[ansible@ip-172-31-38-107 ~]$ cat crontab.yml
+---
+- name: cron module demo
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: crontab example
+      ansible.builtin.cron:
+        name: "test"
+        state:  present
+        minute: "*/1"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: 'logger "anisble-pilot"'
+[ansible@ip-172-31-38-107 ~]$
+
+sudo crontab -l
+sudo crontab -l
+[ansible@ip-172-31-38-107 ~]$ sudo crontab -l
+#Ansible: test
+*/1 * * * * logger "anisble-pilot"
+
+
+ex2:
+
+[ansible@ip-172-31-38-107 ~]$ cat crontab2.yml
+---
+- hosts: localhost
+  become: yes
+  tasks:
+  - name: Ensure a job that runs at 2 and 5 exists. Creates an entry like "0 5,2 * * ls -alh > /dev/null"
+    ansible.builtin.cron:
+      name: "check dirs"
+      minute: "0"
+      hour: "5,2"
+      job: "ls -alh > /dev/null"
+[ansible@ip-172-31-38-107 ~]$
+
+
+output:
+[ansible@ip-172-31-38-107 ~]$ sudo crontab -l
+#Ansible: test
+*/1 * * * * logger "anisble-pilot"
+#Ansible: check dirs
+0 5,2 * * * ls -alh > /dev/null
+
+
+
+-----------------------------------Read json file into a variable:
+--------------------------------------------------------------------
+vi read_json.yml
+---
+- name: json read demo
+  hosts: localhost
+  vars:
+    jsondata: "{{ lookup('file', 'example.json') | from_json }}"
+  tasks:
+    - name: Print variable
+      ansible.builtin.debug:
+        var: jsondata
+
+
+vi example.json   //json file
+{
+  "name": "John",
+  "age": 30
+}
+
+ansible.builtin.file --> read the file content
+from_json filter converts the variable into JSON
+
+----------------------------------how to read an environment variable------
+
+---
+- name: environment demo
+  hosts: all
+  tasks:
+    - name: display HOME
+      ansible.builtin.debug:
+        msg: "{{ lookup('env', 'HOME') }}"
+
+
+printenv  ---> to see the environmental variable.
+
+------------------------------------
+ansible.builtin.env
+------------------------------------
+ex1:
+-----------
+
+---
+- hosts: all
+  tasks:
+  - name: Basic usage
+    ansible.builtin.debug:
+      msg: "'{{ lookup('ansible.builtin.env', 'HOME') }}' is the HOME environment variable."
+
+
+ex2:
+---------------
+---
+- hosts: all
+  tasks:
+  - name: Example how to set default value if the variable is not defined, ignores USR=''
+    ansible.builtin.debug:
+      msg: "{{ lookup('ansible.builtin.env', 'USR', default='nobody') }} is the user."
+
+:--------how to set the environment variable permanently================================
+
+/etc/environment is a system-wide configuration file, which means it is used by all users. It is owned by root though, so you need to be an admin user and use sudo to modify it.
+
+~/.profile is one of your own user's personal shell initialization scripts. Every user has one and can edit their file without affecting others.
+
+/etc/profile and /etc/profile.d/*.sh are the global initialization scripts that are equivalent to ~/.profile for each user. The global scripts get executed before the user-specific scripts though; and the main /etc/profile executes all the *.sh scripts in /etc/profile.d/ just before it exits.
+
+
+
+vi env2.yml
+
+---
+- name: set environment demo
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    os_environment:
+      - key: EDITOR
+        value: vi
+      - key: MY_ENV_VARIABLE
+        value: ansiblepilot
+
+  tasks:
+    - name: customize /etc/environment
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      with_items: "{{ os_environment }}"
+
+
+printenv
+prinenv | grep EDITOR
+printenv | grep MY_ENV_VARIABLE
+
+ansible-playbook env2.yml
+
+--------------------slurp module------------------
+This module works like ansible.builtin.fetch. It is used for fetching a base64- encoded blob containing the data in a remote file.
+
+
+---
+- hosts: all
+  become: yes
+  vars:
+    remotefile: /proc/cpuinfo
+  tasks:
+  - name: Find out what the remote machine's mounts are
+    ansible.builtin.slurp:
+      src: "{{ remotefile }}"
+    register: mounts
+
+  - name: Print returned information
+    ansible.builtin.debug:
+      var: mounts   
+   
+  - name: Print returned information
+    ansible.builtin.debug:
+      msg: "{{ mounts['content'] | b64decode }}"
+
+
+-----------------how to read the file content into a variable--------
+---
+- hosts: all
+  vars:
+    contents: "{{ lookup('file','example.txt') }}"
+  tasks:
+  - name: print the file
+    ansible.builtin.debug:
+      msg: "the content of a file is {{ content }}"
+  - name
+  - name:
+  -name
+
+
+vi example.txt
+hello
+how are you doing
+
+
+
+
+----------------------ad-hoc commands----------------
+An Ansible ad hoc command uses the /usr/bin/ansible command-line tool to automate a single task on one or more managed nodes. ad hoc commands are quick and easy, but they are not reusable.
+
+ex1: to copy the files:
+$ ansible all -m ansible.builtin.copy -a "src=/etc/hosts dest=/tmp/hosts"
+
+-m means 'module'
+-a means 'arguments'
+
+ex2: to create a file:
+$ ansible all -m ansible.builtin.file -a "path=/tmp/f1.txt state=touch"
+
+ex3:to create a directory:
+$ ansible all -m ansible.builtin.file -a "dest=/tmp mode=755 state=directory"
+
+ex4: how to create a user:
+$ ansible all -b -m ansible.builtin.user -a "name=foo password=xxxxxxxx"
+
+to encode a password:
+echo 'hello123' | base64
+output: xxxxxxxx
+
+aGVsbG8xMjMK
+to decode a password:
+echo 'xxxxxxx' | base64 --decode
+output: hello123
+
+
+ex5: to delete the user:
+$ ansible all -b -m ansible.builtin.user -a "name=foo state=absent"
+
+present -- > create  ignore it
+absent --> delete
+
+
+playbook for the above ad-hoc command:
+---
+- hosts: all
+  tasks:
+  - name: to delete the user
+    ansible.builtin.user:
+      name: foo
+      state: absent
+
+
+
+
+ex6: to start a service
+$ ansible all -m ansible.builtin.service -a "name=httpd state=started" 
+
+ex7: to restart a service
+$ ansible all -m ansible.builtin.service -a "name=httpd state=restarted"
+
+ex8: to stop the service
+$ ansible all -m ansible.builtin.service -a "name=httpd state=stopped"
+
+ex9:to gather the facts:
+$ ansible all -m ansible.builtin.setup
+
+-----------------------------------------
+  what is an ansible vault?
+---------------------------------------------------
+
+Ansible vault encrypts variable and files to protect sensitive information and lets  you use them in playbooks, roles, collections
+
+cat f1.yml
+---
+password: mysecretpassword
+
+$ ansible-vault --version
+
+$ ansible-vault --help
+
+$ ansible-vault encrypt f1.yml
+new vault password:
+confirm the new password:
+
+$ cat f1.yml
+
+
+how to use ansible-vault in an ansible playbook?
+=====================================================
+
+vi f2.yml
+---
+- hosts: localhost
+  tasks:
+    - name: include vault file
+      ansible.builtin.include_vars:
+        file: f1.yml
+    - name: display the value
+      ansible.builtin.debug:
+        var: password
+ 
+'include_vars' module is used to include the any file into the playbook.
+
+ansible-playbook f2.yml
+
+ansible-playbook --ask--vault-password f2.yml
+
+
+
+how to decrypt an ansible vault:
+-------------------------------------
+
+vi mypassword.yml
+---
+password: testone
+
+$ ansible-vault encrypt mypassword.yml
+
+$ file mypassword.yml
+
+
+to decrypt the file, password is required.
+
+$ ansible-vault decrypt mypassword.yml    
+vault password:
+
+
+
+
+
+
+
+Looping over Integer Sequences:
+--------------------------------------
+with_sequence generates a sequence of items in ascending numerical order. You can specify a start, end, and an optional step value.
+
+Arguments should be specified in key=value pairs. If supplied, the ‘format’ is a printf style string.
+
+Numerical values can be specified in decimal, hexadecimal (0x3f8) or octal (0600). Negative numbers are not supported. This works as follows:
+
+
+---
+- hosts: all
+  tasks:
+  become: yes
+    # create groups
+    - group:
+        name: "evens"
+        state: present
+    - group:
+        name: "odds"
+        state: present
+
+    # create some test users
+    - user:
+        name: "{{ item }}"
+        state: present
+        groups: "evens"
+      with_sequence:
+        - start: 0
+        - end: 32
+        - format: testuser%02x
+
+    # create a series of directories with even numbers for some reason
+    - file:
+        dest: "/var/stuff/{{ item }}"
+        state: directory
+      with_sequence:
+        - start: 4
+        - end: 16
+        - stride: 2
+
+    # a simpler way to use the sequence plugin
+    # create 4 groups
+    - group:
+        name: "group{{ item }}"
+        state: present
+      with_sequence:
+        count: 4
+
+------------------------------------------------
+
+
+
+
+
+
+
+- name: "loop through list from a variable"
+  ansible.builtin.debug:
+    msg: "An item: {{ item }}"
+  with_items: "{{ somelist }}"
+
+- name: more complex items to add several users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    groups: "{{ item.groups }}"
+    state: present
+  with_items:
+     - { name: testuser1, uid: 1002, groups: "wheel, staff" }
+     - { name: testuser2, uid: 1003, groups: staff }
+
+===============================
+     Ansible apply a template:
+---------------------------------
+ansible.builtin.template
+template a file out to a target host
+ansible_managed, template_host, template_uid, template_path, template_fullpath, template_destpath, template_run_date
+
+---
+- name: template module demo
+  hosts: all
+  become: true
+  vars:
+    page_title: "Placeholder"
+    page_description: |
+      This is my placeholder page example.
+      Multiline is possible ;-)
+  tasks:
+    - name: install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: latest
+
+    - name: apply page template
+      ansible.builtin.template:
+        src: templates/placeholder.html.j2
+        dest: /var/www/html/index.html
+
+
+placeholder.html.j2:
+---------------------
+<html>
+<head>
+  <title>{{ page_title }}</title>
+</head>
+<body>
+    <h1>{{ page_title }}</h1>
+    <p>{{ page_description }}</p>
+</body>
+</html>
+
+-------------------------------
+ service module:
+used to control the services on remote hosts.
+---------------------------------
+enabled yes --> allows to start during booting process.
+
+---
+- name: service module demo
+  hosts: all
+  become: true
+  tasks:
+    - name: sshd restart
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+        enabled: true
+
+----------------------------------------------------
+   schedule a cron job task in linux:
+----------------------------------------------------
+ansible.builtin.cron
+
+Manage cron.d and crontab entries
+
+---
+- name: cron module demo
+  hosts: all
+  tasks:
+    - name: "example cronjob"
+      ansible.builtin.cron:
+        name: "test"
+        state: present
+        minute: "*/2"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: 'logger "ansible-pilot"'
+
+login into the server and check any jobs exists or not
+crontab -l 
+
+---------------------------------------------------
+loop in file template.
+--------------------------------------------------
+ansible.builtin.template
+tempalte a file out to a target host
+ansible_managed, tempalte_host, template_uid,
+template_path, temlate_fullpath, template_destpath, template_run_date
+
+
+generate_myhosts:
+
+---
+- name: template module demo
+  hosts: all
+  become: true
+  tasks:
+    - name: generate /etc/myhosts file
+      ansible.builtin.template:
+        src: templates/hosts.j2
+        dest: /etc/myhosts
+        owner: root
+        group: root
+        mode: '0644'
+hosts:
+# {{ ansible_managed }}
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+{% for host in groups['all'] %}
+{{ hostvars[host]['ansible_host'] }}  {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['inventory_hostname_short'] }}
+{% endfor %}
+
+
+demo.example.com ansible_host=192.168.0.190
+
+inventory:
+[all:vars]
+ansible_connection=ssh
+ansible_user=devops
+ansible_ssh_private_key_file=/Users/lberton/prj/github/ansible-pilot/demo/id_rsa
+
+
+==================================User Management in Ansible==================
+  user module
+============================================
+name
+state
+password
+uid
+comment
+shell
+expires
+password_expire_min
+password_expire_max
+group
+groups
+create_home
+generate_ssh_key
+
+
+useradd john -c "test user" -u 2000 - /home/extwo -s "/bin/sh"
+
+/bin/shell
+/bin/sh
+
+useradd john
+/home/john
+
+user module
+
+useradd testuser
+default group will be created which is called as primary group
+testuser   --> user  --.
+testuser --> group--> 
+
+cat /etc/group
+
+sonarqube:x:1081:testuser,john,jenkins
+sonarqube:x:1081:testuser
+
+
+
+
+
+
+
+
+
+cat /etc/group
+groupadd sonarqube
+
+
+
+
+
+
+
+
+
+
+
+
+
+john --1001
+john2 ---1002
+
+
+
+
+---
+- hosts: all
+  become: true
+  tasks:  
+  - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    ansible.builtin.user:
+      name: john
+      password: "{{ 'password' | password_hash('sha512', 'testone') }}"
+      comment: John Doe
+      uid: 1040
+      groups:
+        - wheel
+        - adm
+      state: "present"
+      shell: "/bin/bash"
+      system: false
+      create_home: true
+      home: "/home/example"
+      comment: "Ansible example"
+      password_expire_min: 20
+      password_expire_max: 30        
+
+user john
+/home/username
+
+/home/example
+
+useradd john
+
+passwd john
+
+symbolic link in linux
+ soft and hard link
+usercreate
+userdel
+password set
+lock the password
+how to create agroup 
+delete a group 
+hwo add users in the group
+
+
+
+
+
+
+
+
+
+
+
+
+
+example1:       
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    ansible.builtin.user:
+      name: john2
+      password: "{{ 'password' | password_hash('sha512', 'testone') }}"
+      comment: John Doe
+      uid: 1041
+      groups:
+        - wheel
+        - adm
+      state: "present"
+      shell: "/bin/bash"
+      system: false
+      create_home: true
+      home: "/home/example"
+      comment: "Ansible example"
+      password_expire_min: 20
+      password_expire_max: 30
+
+        
+
+
+------------------------Remove an user-----------------------------
+---
+- name: user module demo
+  hosts: all
+  become: true
+  tasks:
+    - name: user example not present
+      ansible.builtin.user:
+        name: example        //name of the user going to remove
+        state: "absent"      // present/absent
+        remove: true         // no/yes
+        
+
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    ansible.builtin.user:
+      name: john2
+      state: "absent"
+      remove: true
+
+
+[ansible@ip-172-31-38-107 ~]$ ansible-playbook ex11.yml
+
+PLAY [all] ************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************
+ok: [172.31.41.97]
+
+TASK [Add the user 'johnd' with a specific uid and a primary group of 'admin'] ****************************************************
+fatal: [172.31.41.97]: FAILED! => {"changed": false, "msg": "userdel: user john2 is currently used by process 2119\n", "name": "john2", "rc": 8}
+
+PLAY RECAP ************************************************************************************************************************
+172.31.41.97               : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+
+
+
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    ansible.builtin.user:
+      name: john2
+      state: "absent"
+      remove: true
+      force: true
+
+
+
+
+------------------------------------------------------------------------
+          change the user password:
+-------------------------------------------------------------------------
+---
+- hosts: all
+  become: true
+  vars:
+    myuser: "john2"
+    mypassword: "password"
+  tasks:
+  - name: change the password
+    ansible.builtin.user:
+      name: "{{ myuser }}"
+      state: present
+      password: "{{ mypassword | password_hash('sha512') }}"
+
+
+---------------------------How to disable the user-------------------
+
+[ansible@ip-172-31-38-107 ~]$ cat ex13.yml
+---
+- hosts: all
+  become: true
+  vars:
+    myuser: "john"
+  tasks:
+  - name: change the password
+    ansible.builtin.user:
+      name: "{{ myuser }}"
+      state: present
+      password_lock: true
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+
+
+---
+- name: user module demo
+  hosts: all
+  become: true
+  vars:
+    myuser: "example"
+  tasks:
+    - name: disable user
+      ansible.builtin.user:
+        name: "{{ myuser }}"
+        state: present
+        password_lock: true
+        shell: "/sbin/nologin"
+
+
+
+
+
+------------------------How to enable a user-------------------------
+[ansible@ip-172-31-38-107 ~]$ cat ex13.yml
+---
+- hosts: all
+  become: true
+  vars:
+    myuser: "john"
+  tasks:
+  - name: change the password
+    ansible.builtin.user:
+      name: "{{ myuser }}"
+      state: present
+      password_lock: false
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+
+---
+- name: user module demo
+  hosts: all
+  become: true
+  vars:
+    myuser: "example"
+  tasks:
+    - name: enable user
+      ansible.builtin.user:
+        name: "{{ myuser }}"
+        state: present
+        password_lock: false
+        shell: "/bin/bash"
+
+
+----------------------------------------------
+   How to set password expiration
+--------------------------------------------
+---
+- name: user module demo
+  hosts: all
+  become: true
+  vars:
+    myuser: "example"
+  tasks:
+    - name: password min expiration
+      ansible.builtin.user:
+        name: "{{ myuser }}"
+        password_expire_min: 7
+
+    - name: password max expiration
+      ansible.builtin.user:
+        name: "{{ myuser }}"
+        password_expire_max: 90
+
+-----------------------------------------------
+     How to create a Group 
+------------------------------------------------
+[ansible@ip-172-31-38-107 ~]$ cat ex13.yml
+---
+- hosts: all
+  become: true
+  vars:
+    mygroup: "deposit"
+  tasks:
+  - name: create a new group
+    ansible.builtin.user:
+      name: "{{ mygroup }}"
+      state: present
+[ansible@ip-172-31-38-107 ~]$
+
+
+
+---
+- name: group module demo
+  hosts: all
+  become: true
+  vars:
+    mygroup: "example"
+  tasks:
+    - name: create group
+      ansible.builtin.group:
+        name: "{{ mygroup }}"
+        state: present
+
+-----------------------------------------------
+         How to delete a group 
+------------------------------------------------
+[ansible@ip-172-31-38-107 ~]$ cat ex13.yml
+---
+- hosts: all
+  become: true
+  vars:
+    mygroup: "deposit"
+  tasks:
+  - name: create a new group
+    ansible.builtin.user:
+      name: "{{ mygroup }}"
+      state: absent
+[ansible@ip-172-31-38-107 ~]$
+
+
+---
+- name: group module demo
+  hosts: all
+  become: true
+  vars:
+    mygroup: "example"
+  tasks:
+    - name: delete group
+      ansible.builtin.group:
+        name: "{{ mygroup }}"
+        state: absent
+
+------------------------------------------------
+  Add a user to the secondary group :
+-----------------------------------------------
+---
+- name: group module demo
+  hosts: all
+  become: true
+  vars:
+    myuser: "example"
+    mygroups: 
+      - adm
+      - sys
+  tasks:
+    - name: adding secondary group
+      ansible.builtin.group:
+        name: "{{ myuser }}"
+        groups: "{{ mygroups }}"
+        append: true
+
+need to see what values exists befire executing the playbook:
+cat passwd | grep example
+
+id examples
+
+groups example
+
+grep example /etc/group
+
+
+----------------------------------------------------
+  How to change the users primary group name:
+----------------------------------------------------
+---
+- name: user module demo
+  hosts: all
+  become: true
+  vars:
+    myuser: "example"
+    mygroup: "users"
+  tasks:
+    - name: change primary group 
+      ansible.builtin.user:
+        name: "{{ myuser }}"
+        group: "{{ mygroup }}"
+
+id example
+groups example
+
+
+
+
+
+
+----------------------------------------------------------------------
+
+---------------------------------------------
+sudo su 
+cat /etc/image-id
+cat /etc/os-release
+yum updated
+amazon-linux-extras install ansible2
+
+ansible --version
+
+amazon-linux-extras install epel
+
+yum repolist
+
+amazon-linux-extras disable ansible2
+
+yum-config-manager --enable epel
+
+yum --enablerepo  epel install ansible
+----------------------------------------
+ what is an ansible playbook?
+
+Ansible playbook is a blue print for automation.
+YAML format
+Ansible language
+
+    example.yml
+------------------
+---
+- name: example playbook
+  hosts: all
+  vars: 
+    myvar: "example text" 
+    mybool: true
+    mycities:
+      - New York
+      - Paris
+
+  tasks: 
+    - name: print var
+      ansible.builtin.debug:
+        #var: myvar
+        msg: "value is {{ myvar }}"
+      notify: reload 
+
+    - name: condition
+      ansible.builtin.debug:
+        msg: "example condition"
+      when: mybool
+
+    - name: print cities
+      ansible.builtin.debug:
+        var: item
+      loop: "{{ mycities }}"
+
+ handlers:
+   - name: reload
+     ansible.builtin.debug:
+       msg: "example handler"
+     
+    
+
+cat inventory
+localhost ansible_connection=local
+
+ansible-playbook --version
+
+ansible-playbook -i inventory example.yml
+
+----------------------------------------------
+     print a variable/text during execution:
+----------------------------------------------
+  ansible.built.debug
+
+msg
+var
+verbosity
+
+
+---
+- name: debug module demo
+  hosts: all
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+
+
+---
+- name: debug module demo
+  hosts: all
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+        msg: "Example text"
+
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    fruit: "apple"
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+        var: fruit
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    fruit: "apple"
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+        msg: "our fruit is {{ fruit }}"
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    fruit: "apple"
+  tasks:
+    - name: debug message
+      ansible.builtin.debug:
+        msg: "our fruit is {{ fruit }}"
+        verbosity: 2
+
+
+print "hello world"
+print a text
+print a variable
+print text and variable
+verborsity level
+
+====================================================
+Pause execution - Ansible module pause
+====================================================
+  ansible.builtin.pause
+
+
+minutes
+seconds 
+prompt  "text message" 
+echo yes/no 
+ 
+---
+- name: pause module demo
+  hosts: all
+  vars:
+    wait_seconds: 10
+  tasks:
+    - name: pause for {{ wait_seconds | int }} second(s)
+      ansible.builtin.pause:
+        seconds: "{{ wait_seconds | int }}"
+
+    - name: message
+      ansible.builtin.debug:
+        msg: "The end"
+-------------------------------------------------------
+   How to pass extra varialbes to playbook via commandline
+--------------------------------------------------------
+--extra-vars "fruit=apple"
+--extra-vars '{"fruit":"apple"}'
+--extra-vars "@file.json"
+--extra-vars "@file.yml"
+
+---
+- name: extra variable demo
+  hosts: all
+  vars:
+    fruit: "banana"
+  task:
+    - name: print message
+      ansible.builtin.debug:
+        msg: "fruit is {{ fruit }}"
+
+
+ansible-playbook -i inventory --extra-vars="fruit=apple" example.yml
+
+
+ansible-playbook -i inventory --extra-vars='{"fruit":"apple"}' example.yml
+
+-------------------------------------------------------------
+  How to break a string over multiple lines -Ansible literal and folder 
+       ">"  and  " | " operators
+    | --> Literal Block Scalar
+    > --> Folded Block scalar
+-----------------------------------------------------------------
+
+variable1: |
+    exaclty as you see
+    will appear these there
+    lines of poetry
+
+variable1:
+    exaclty as you see
+    will appear these there
+    lines of poetry
+
+
+variable2: >
+    this is really a single 
+    line of text despite 
+    appearances
+
+
+variable2:
+    this is really a single line of text despite appearances
+     
+    
+
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    variable1: |
+      exactly as you
+      will appear thes
+      lines of poetry
+    variable2: >
+      this is really a 
+      single line of 
+      text despite appearances
+  tasks:
+    - name: print variable1
+      ansible.builtin.debug:
+        var: variable1
+    - name: print variable2
+      ansible.builtin.debug:
+        var: variable2
+
+
+
+to remove the new line at the end
+ >- |-
+
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    variable1: |-
+      exactly as you
+      will appear thes
+      lines of poetry
+    variable2: >-
+      this is really a 
+      single line of 
+      text despite appearances
+  tasks:
+    - name: print variable1
+      ansible.builtin.debug:
+        var: variable1
+    - name: print variable2
+      ansible.builtin.debug:
+        var: variable2
+
+
+---
+- name: debug module demo
+  hosts: all
+  vars:
+    variable1: |-
+      exactly as you
+      will appear thes
+      lines of poetry
+    variable2: >-
+      this is really a 
+      single line of 
+      text despite appearances
+  tasks:
+    - name: print variable1
+      ansible.builtin.debug:
+        msg: "{{ variable1.split('\n') }}"
+    - name: print variable2
+      ansible.builtin.debug:
+        var: variable2
+-----------------------------------------------------------
+   difference b/w ansible_hostname and inventory_hostname
+-----------------------------------------------------------
+
+ansible_hostname:
+---------------
+ansible_hostname read the hostname from the facts collected during the gather_facts same as 
+the uname -n or hostname commandline 
+
+Need gather_facts enabled, otherwise the ansible_facts variable would be unavailable to use in your playbook.
+
+same as hostname of the target host
+
+as this is based on the gather_fatcs step, ansible_hostname not available in ad_hoc command.
+
+Inventory_hostname:
+------------------------
+Inventory_hostname read the hostname from the inventory confguration or the hosts file.
+Could be different from the hostname configuration of the remote system. It could be only a name on the controlller machine.
+
+inventory_hostname is always available to use in your playbook
+
+could be different from the hostname of the target host
+
+available for both playbook and ad-hoc command.
+
+
+---
+- name: hostnames demo
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: print inventory_hostname
+      ansible.builtin.debug:
+      var: inventory_hostname
+    - name: print ansible_hostname
+      ansible.builtin.debug:
+        var: ansible_hostname
+    - name: print ansible_fqdn
+      ansible.builtin.debug:
+        var: ansible_fqdn
+
+
+inventory:
+
+foo.example.com ansible_host=192.168.0.190
+
+[all:vars]
+ansible_connection:ssh
+ansible_user=devops
+ansible_ssh_private_key_file=~/../././id_rsa
+
+
+ssh devops@192.168.0.190
+hostname -f
+uname -a
+uname -n
+hostname
+
+---------------------------
+set remote environment per ansible task or play
+---------------------------------------
+environment
+
+---
+- name: remote environment demo
+  hosts: all
+  gather_facts: false
+  environment:
+    EXAMPLE: test1
+
+  tasks:
+    - name: diplay EXAMPLE
+      ansible.builtin.command: "echo $EXAMPLE"
+
+    - name: diplay EXAMPLE
+      ansible.builtin.command: "echo $EXAMPLE"
+      environment:
+        EXAMPLE: test2
+
+login int ot remote machine and check 
+echo $EXAMPLE
+ 
+
+=========================Date, time and timestamp==================
+---
+- name: date and time demo
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: date and time
+      ansible.builtin.debug:
+        var: ansible_data_time
+    - name: ISO8601
+      ansible.builtin.debug:
+        var: ansible_date_time.iso8601
+
+
+ansible_date_time is a magic variable that returns date/time on the managed node (e.g. the target system). Or, the lookup plugin and date can be used. Or, the strftime (string format time) filter can be used.
+
+In this example, the debug module is used output the current date.
+
+- name: current date
+  debug: 
+    msg: "{{ ansible_date_time.date }}"
+ 
+
+Something like this should be returned.
+
+TASK [current date]
+ok: [server1.example.com] => {
+    "msg": "2020-12-11"
+}
+ 
+
+Or the time.
+
+- name: current time
+  debug: 
+    msg: "{{ ansible_date_time.time }}"
+ 
+
+Something like this should be returned.
+
+TASK [current time]
+ok: [server1.example.com] => {
+    "msg": "01:54:08"
+}
+ 
+
+Usually, you are going to want to format the output, like this.
+
+vars:
+  date: "{{ ansible_date_time.year }}-{{ ansible_date_time.month }}-{{ ansible_date_time.day }}"
+  time: "{{ ansible_date_time.hour }}:{{ ansible_date_time.minute }}:{{ ansible_date_time.second }}"
+------------------------------------------------------------------
+
+        using date, time and time_stamp without gather_facts:
+-------------------------------------------------------------------
+
+we need to build the format by ourself..
+
+Date and time: date+%Y-%m-%d@%H:%M:%S
+
+ISO8601 date-iso-8601=seconds
+        date+%Y-%m-%d@%H:%M:%S%z
+
+
+---
+- name:date and time demo
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: date and time
+      ansible.builtin.debug:
+        msg: "{{ lookup('pipe', 'date +%Y-%m-%d@$H:%M:%S') }}"
+
+    - name: iso8601
+      ansible.builtin.debug:
+        msg: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S%z') }}"
+
+    - name: iso8601
+      ansible.builtin.debug:
+        msg: "{{ lookup('pipe', 'date --iso8601=seconds') }}"
+      ignore_errors: true
+
+===============================================================
+  Ansible Playbook Dry run-check and diff mode
+================================================================
+--check
+--diff
+
+at task level: 
+check_mode: true
+diff: true
+
+How to Dry run the ansible playbook with check and diff mode.
+
+---
+- name: root login enabled
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: ssh premitrootlogin
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: "PermitRootLogin ys"
+        state: present
+      notify: ssh restart
+
+  handlers:
+     - name: ssh restart
+       ansible.builtin.service:
+         name: sshd
+         state: restarted
+
+sudo grep ^PermitRootLogin /etc/ssh/sshd_config
+
+ansible-playbook --check
+ansible-playbook --diff
+
+====================================================
+How to use Ansible magic Variables in playbook
+=====================================================
+A magic variable are variables that are built into Ansible. Following are the magic variables.
+
+ansible_check_mode
+ansible_config_file
+ansible_dependent_role_names
+ansible_diff_mode
+ansible_forks
+ansible_inventory_sources
+ansible_limit
+ansible_loop
+ansible_loop_var
+ansible_index_var
+ansible_parent_role_names
+ansible_parent_role_paths
+ansible_play_batch
+ansible_play_hosts
+ansible_play_hosts_all
+ansible_play_name
+ansible_play_role_names
+ansible_playbook_python
+ansible_role_names
+ansible_collection_name
+ansible_run_tags
+ansible_search_path
+ansible_skip_tags
+ansible_verbosity
+ansible_version
+group_names
+groups
+hostvars
+inventory_hostname
+inventory_hostname_short
+inventory_dir
+inventory_file
+omit
+play_hosts
+playbook_dir
+role_name
+role_names
+role_path
+
+
+---
+- name: magic vars demo
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: magic variable
+      ansible.builtin.debug:
+        var: "{{ item }}"
+      loop:
+        - ansible_config_file
+        - playbook_dir
+        - inventory_dir
+        - inventory_file
+        - ansible_check_mode
+        - ansible_diff_mode
+        - ansible_forks
+        - ansible_verbosity
+        - inventory_hostname
+        - ansible_play_hosts
+        - ansible_version
+
+-----------------------------------------------------
+---
+- name: playbook directory demo
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: magic variable
+      ansible.builtin.debug:
+        var: playbook_dir
+
+
+------------------------------------------------
+    How to run python script on remote machines after transferring it with Ansible Playbook
+--------------------------------------------------
+cmd  script name
+executable : path
+
+
+---
+- name: run Python script
+  hosts: all
+  tasks:
+    - name: run cars.py script
+      ansible.builtin.script:
+        executable: python3
+        cmd: cars.py
+      register: cars_raw_output
+
+    - name: print cars_raw_output
+      ansible.builtin.debug:
+        var: cars_raw_output
+        verbosity: 2
+
+    - name: convert output to JSON
+      ansible.builtin.set_fact:
+        cars_list: "{{ cars_raw_output.stdout | from_json }}"
+
+    - name: print cars_list
+      ansible.builtin.debug:
+        var: cars_list
+
+
+
+
+======================================================
+   
+
+
+--------------------Docker installation---------------------------
+---
+- name: install Docker
+  hosts: all
+  become: true
+  tasks:
+    - name: set mydistribution
+      ansible.builtin.set_fact:
+        mydistribution: "{{ 'rhel' if (ansible_distribution == 'Red Hat Enterprise Linux') else (ansible_distribution | lower) }}"
+
+    - name: Add signing key
+      ansible.builtin.rpm_key:
+        key: "https://download.docker.com/linux/{{ mydistribution }}/gpg"
+        state: present
+
+    - name: Add repository into repo.d list
+      ansible.builtin.yum_repository:
+        name: docker
+        description: docker repository
+        baseurl: "https://download.docker.com/linux/{{ mydistribution }}/$releasever/$basearch/stable"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://download.docker.com/linux/{{ mydistribution }}/gpg"
+
+    - name: Install Docker
+      ansible.builtin.yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+        update_cache: true
+
+    - name: Start Docker
+      ansible.builtin.service:
+        name: "docker"
+        enabled: true
+        state: started
+
+--------------------------------------------------------
+Install server, client, utils => ansible.builtin.yum
+initialize db => ansible.builti.stat, ansible.builtin.shell
+start and enable at root ==> ansible.builtin.service
+
+
+Install postgreSQL in RHEL:
+----------------------
+---
+- name: postgresql
+  hosts: all
+  become: true
+  tasks:
+    - name: Install packages
+      ansible.builtin.yum:
+        name:
+          - postgresql
+          - postgresql-server
+          - python3-psycog2
+        state: present
+    - name: check if postgresql is initialized
+      ansible.builtin.stat:
+        path: "/var/lib/pgsql/data/pg_hba.conf"
+      register: postgres_data
+   - name: Initialize Postgresql
+     ansible.builtin.shell: "postgresql-setup initdb"
+     when: not postgres_data.stat.exists
+   - name: start and enable service
+     ansible.builtin.service:
+       name: postgresql
+       state: started
+       enabled: true
+
+
+
+sudo su
+dnf list postgresql
+dnf list postgresql-server
+ls -al /var/lib/pgsql/data/pg_hba.conf
+systemctl status postgresql
+
+  
+
+-----------------------------------------------------------
+
