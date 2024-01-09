@@ -1,0 +1,46 @@
+Vault in ansible:
+-----------------
+Run the playbook with --ask-vault-pass
+--vault-password-file
+export ANSIBLE_VAULT_PASSWORD_FILE=./ansible-vault.pass
+
+
+---
+- hosts: localhost
+  name: ansible vault example
+  tasks:
+     - name: include vault
+       ansible.builtin.include_vars:
+           file: password.yml
+
+     - name: print variable
+       ansible.builtin.debug:
+           var: mypassword
+
+
+
+vi password.yml
+---
+mypassword: mysecret
+
+
+ansible-vault encrypt password.yml
+newpassword:
+
+cat password.yml
+
+ansible-playbook --ask-vault-password playbookname
+
+
+ansible galaxy
+---------------------
+how to download and use ansible galaxy collection
+
+what is ansible collection?
+It contains pacakge and distribute playbooks, roles, modules, and plugins using collections.
+
+it's easy to downlaod and share via ansible galaxy.
+
+
+what is ansible galaxy?
+-----------------------------
